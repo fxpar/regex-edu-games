@@ -6,6 +6,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { HubScene } from './hub.js';
 import { JetGame } from './jet-game.js';
+import { GardenGame } from './garden-game.js';
 import { loadProgress, saveProgress, resetProgress, UNLOCK_ALL } from './storage.js';
 import { initAudio, setMuted, isMuted, sfx, startMusic, stopMusic } from './audio.js';
 import { $, esc, toast, closeModal, modalOpen } from './ui.js';
@@ -43,11 +44,26 @@ const app = {
     if (this.active === sceneObj) return;
     this.active?.exit();
     this.active = sceneObj;
+    document.body.classList.toggle('no-gl', !sceneObj.scene); // écrans sans 3D : canvas masqué
     sceneObj.enter();
     resize();
   },
+  // Accueil : choix entre la salle d'arcade (3D néon) et le jardin des bulles (doux)
+  toWelcome() {
+    closeModal();
+    document.body.classList.remove('in-game');
+    this.activate(still);
+    stopMusic();
+    this.setScreen('screen-welcome');
+  },
+  openGarden() {
+    this.activate(garden);
+    this.setScreen('screen-garden-menu');
+    garden.openMenu();
+  },
   toHub() {
     closeModal();
+    if (!isMuted()) startMusic();
     document.body.classList.remove('in-game');
     this.activate(hub);
     this.setScreen('screen-hub');
@@ -79,6 +95,9 @@ const app = {
 
 const hub = new HubScene(app);
 const jet = new JetGame(app);
+const garden = new GardenGame(app);
+// écran fixe sans 3D (accueil)
+const still = { scene: null, enter() {}, exit() {}, update() {}, resize() {} };
 
 // ---------- Hub : cartes HTML (accessibles, et pratiques sur mobile) ----------
 function renderHubCards() {
@@ -113,6 +132,11 @@ function renderSquadrons() {
   $('#squad-list').querySelectorAll('[data-squad]').forEach((b) => b.addEventListener('click', () => { sfx.click(); app.startSquadron(+b.dataset.squad); }));
 }
 
+document.querySelectorAll('[data-univers]').forEach((b) => b.addEventListener('click', () => {
+  initAudio();
+  if (b.dataset.univers === 'jardin') app.openGarden(); else { sfx.open(); app.toHub(); }
+}));
+$('#btn-welcome').addEventListener('click', () => { sfx.click(); app.toWelcome(); });
 $('#btn-squad-back').addEventListener('click', () => { sfx.click(); app.toHub(); });
 $('#btn-reset').addEventListener('click', () => {
   if (!confirm('Effacer toute la progression enregistrée sur ce navigateur ?')) return;
@@ -127,22 +151,26 @@ function syncSoundButtons() {
   const on = !isMuted();
   $('#btn-sound-hub').textContent = `♪ Son : ${on ? 'ON' : 'OFF'}`;
   $('#btn-sound').textContent = on ? '♪' : '✕♪';
+  $('#gd-sound').textContent = on ? '♪' : '✕♪';
 }
 function toggleSound() {
   initAudio();
   setMuted(!isMuted());
   app.progress.muted = isMuted();
   app.save();
-  if (isMuted()) stopMusic(); else startMusic();
+  if (isMuted() || !app.active?.scene) stopMusic(); else startMusic();
   syncSoundButtons();
 }
 setMuted(!!app.progress.muted);
 syncSoundButtons();
 $('#btn-sound-hub').addEventListener('click', toggleSound);
 $('#btn-sound').addEventListener('click', toggleSound);
+$('#gd-sound').addEventListener('click', toggleSound);
 // La musique démarre au premier geste (règle d'autoplay des navigateurs)
-window.addEventListener('pointerdown', () => { initAudio(); if (!isMuted()) startMusic(); }, { once: true });
-window.addEventListener('keydown', () => { initAudio(); if (!isMuted()) startMusic(); }, { once: true });
+// (musique seulement dans la salle d'arcade)
+const firstGesture = () => { initAudio(); if (!isMuted() && app.active?.scene) startMusic(); };
+window.addEventListener('pointerdown', firstGesture, { once: true });
+window.addEventListener('keydown', firstGesture, { once: true });
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('#screen-squad').hidden && !modalOpen()) app.toHub();
@@ -151,6 +179,7 @@ window.addEventListener('keydown', (e) => {
 // Onglet masqué -> pause automatique
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && app.active === jet && jet.state === 'playing') jet.pause();
+  if (document.hidden && app.active === garden && garden.state === 'playing') garden.pause();
 });
 
 // ---------- Redimensionnement & boucle ----------
@@ -169,14 +198,20 @@ function loop() {
   const a = app.active;
   if (a) {
     a.update(dt);
-    renderPass.scene = a.scene;
-    renderPass.camera = a.camera;
-    composer.render(dt);
+    if (a.scene) {
+      renderPass.scene = a.scene;
+      renderPass.camera = a.camera;
+      composer.render(dt);
+    }
   }
   requestAnimationFrame(loop);
 }
 
-app.toHub();
+// ?univers=arcade ou ?univers=jardin : ouvre directement un univers (lien à donner aux élèves)
+const univers = new URLSearchParams(location.search).get('univers');
+if (univers === 'arcade') app.toHub();
+else if (univers === 'jardin') app.openGarden();
+else app.toWelcome();
 resize();
 loop();
 $('#loader').classList.add('done');

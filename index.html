@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>Regex Arcade 3D</title>
-  <meta name="description" content="Apprendre les expressions régulières en jouant : salle d'arcade 3D et mini-jeu Mach-Regex Jet Interceptor.">
+  <meta name="description" content="Apprendre les expressions régulières en jouant : salle d'arcade 3D néon ou jardin des bulles, au choix.">
   <meta name="theme-color" content="#07001a">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Nunito:wght@400;700;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/garden.css">
   <script type="importmap">
   {
     "imports": {
@@ -22,6 +23,82 @@
 <body>
   <canvas id="gl" aria-hidden="true"></canvas>
 
+  <!-- ========== ACCUEIL : CHOIX DE L'UNIVERS ========== -->
+  <section id="screen-welcome" class="screen welcome" hidden>
+    <div class="wl-wrap">
+      <h1 class="wl-title">Regex <span>Arcade</span></h1>
+      <p class="wl-sub">Apprendre les expressions régulières en jouant. Choisis ton univers&nbsp;:</p>
+      <div class="wl-choices">
+        <button type="button" class="wl-card wl-neon" data-univers="arcade">
+          <svg class="wl-art" viewBox="0 0 200 90" aria-hidden="true">
+            <defs><linearGradient id="wlsun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient></defs>
+            <circle cx="100" cy="58" r="30" fill="url(#wlsun)"/>
+            <g stroke="#0b0322" stroke-width="3"><line x1="60" y1="52" x2="140" y2="52"/><line x1="60" y1="60" x2="140" y2="60"/><line x1="60" y1="68" x2="140" y2="68"/></g>
+            <rect x="0" y="62" width="200" height="28" fill="#0b0322"/>
+            <g stroke="#ff2bd6" stroke-width="1" opacity=".8"><line x1="0" y1="70" x2="200" y2="70"/><line x1="0" y1="80" x2="200" y2="80"/><line x1="100" y1="62" x2="100" y2="90"/><line x1="100" y1="62" x2="30" y2="90"/><line x1="100" y1="62" x2="170" y2="90"/><line x1="100" y1="62" x2="-40" y2="90"/><line x1="100" y1="62" x2="240" y2="90"/></g>
+            <path d="M100 76 l-22 8 h44 z" fill="#1b2148" stroke="#00f0ff" stroke-width="1.5"/>
+            <rect x="128" y="14" width="44" height="14" rx="3" fill="#07001a" stroke="#ffb000"/><text x="150" y="24.5" font-size="8" text-anchor="middle" fill="#fff" font-family="monospace">p..e</text>
+          </svg>
+          <h2>La salle d'arcade</h2>
+          <p>Pilote un jet dans un décor néon : tire sur les drones dont le mot correspond à la regex. Missiles, explosions, rythme soutenu.</p>
+          <span class="wl-for">⚡ Pour celles et ceux qui aiment l'action</span>
+        </button>
+        <button type="button" class="wl-card wl-soft" data-univers="jardin">
+          <svg class="wl-art" viewBox="0 0 200 90" aria-hidden="true">
+            <rect width="200" height="90" fill="#e9f6ef"/>
+            <path d="M0 74 Q50 64 100 74 T200 72 V90 H0 Z" fill="#bfe6d3"/>
+            <circle cx="52" cy="40" r="17" fill="#fff" fill-opacity=".7" stroke="#8fc9e8" stroke-width="1.5"/><text x="52" y="43" font-size="8" text-anchor="middle" fill="#3b3a4a" font-family="monospace">page</text>
+            <circle cx="112" cy="26" r="15" fill="#fff" fill-opacity=".7" stroke="#e8a5c4" stroke-width="1.5"/><text x="112" y="29" font-size="8" text-anchor="middle" fill="#3b3a4a" font-family="monospace">pile</text>
+            <circle cx="158" cy="50" r="16" fill="#fff" fill-opacity=".7" stroke="#b9a8ea" stroke-width="1.5"/><text x="158" y="53" font-size="8" text-anchor="middle" fill="#3b3a4a" font-family="monospace">pomme</text>
+            <g fill="#e8735a"><circle cx="30" cy="76" r="3"/><circle cx="176" cy="78" r="3"/></g><g fill="#f2b84b"><circle cx="90" cy="80" r="2.5"/></g>
+          </svg>
+          <h2>Le jardin des bulles</h2>
+          <p>Des mots flottent dans des bulles : cueille ceux qui correspondent, laisse s'envoler les autres. Rythme calme, couleurs douces.</p>
+          <span class="wl-for">🌿 Pour découvrir en douceur</span>
+        </button>
+      </div>
+      <p class="wl-foot">Mêmes notions, mêmes exercices, même progression : seule l'ambiance change. Tu peux changer d'univers à tout moment.</p>
+    </div>
+  </section>
+
+  <!-- ========== JARDIN : CHOIX DE LA PARCELLE ========== -->
+  <section id="screen-garden-menu" class="screen garden-menu" hidden>
+    <div class="gdm-panel">
+      <header class="gdm-head">
+        <button class="gd-btn ghost" id="gdm-back" type="button">← Accueil</button>
+        <h2>Le jardin des bulles</h2>
+      </header>
+      <p class="gdm-brief">Chaque parcelle cache quelques fleurs, une par notion. Pour faire éclore une fleur, cueille les bulles dont le mot
+        <b>correspond</b> à la regex et laisse les autres s'envoler. Prends ton temps : une bulle manquée repasse.</p>
+      <div id="gdm-list" class="gdm-list"></div>
+    </div>
+  </section>
+
+  <!-- ========== JARDIN : JEU ========== -->
+  <section id="screen-garden" class="screen garden" hidden>
+    <div class="gd-sky" aria-hidden="true"><span class="gd-cloud c1"></span><span class="gd-cloud c2"></span><span class="gd-cloud c3"></span></div>
+    <header class="gd-top">
+      <div class="gd-where"><span id="gd-parcel"></span><b id="gd-level"></b></div>
+      <div id="gd-leaves" class="gd-leaves"></div>
+      <div class="gd-score">✿ <span id="gd-score">0</span></div>
+      <div class="gd-actions">
+        <button class="gd-btn" id="gd-course" type="button">Cours</button>
+        <button class="gd-btn" id="gd-pause" type="button" title="Pause (Échap)">Pause</button>
+        <button class="gd-btn" id="gd-sound" type="button" title="Son">♪</button>
+        <button class="gd-btn ghost" id="gd-quit" type="button">Parcelles</button>
+      </div>
+    </header>
+    <div class="gd-sign">
+      <span class="gd-sign-k">Cueille les mots qui correspondent à</span>
+      <div id="gd-regex" class="gd-regex"></div>
+      <div class="gd-sign-badges"><span id="gd-mode" class="gd-badge"></span><span id="gd-flags" class="gd-badge warm" hidden></span></div>
+    </div>
+    <div id="gd-field" class="gd-field" aria-label="Bulles"></div>
+    <div class="gd-pond" aria-hidden="true"></div>
+    <div id="gd-jar" class="gd-jar" aria-label="Bocal des mots cueillis"><span id="gd-jar-count">0</span></div>
+    <div id="gd-msg" class="gd-msg" aria-live="polite"></div>
+  </section>
+
   <!-- ========== HUB ARCADE ========== -->
   <section id="screen-hub" class="screen" hidden>
     <header class="hub-head">
@@ -30,6 +107,7 @@
     </header>
     <nav id="hub-cards" class="hub-cards" aria-label="Mini-jeux"></nav>
     <footer class="hub-foot">
+      <button class="btn ghost small" id="btn-welcome" type="button">← Accueil</button>
       <button class="btn ghost small" id="btn-sound-hub" type="button">♪ Son : ON</button>
       <button class="btn ghost small" id="btn-reset" type="button">Réinitialiser la progression</button>
     </footer>

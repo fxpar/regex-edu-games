@@ -104,3 +104,14 @@ export function stopMusic() {
   clearInterval(musicTimer);
   musicTimer = null;
 }
+
+// Sons doux (sinusoïdes, sans bruit) pour le jardin des bulles.
+export const softSfx = {
+  plop() { tone(520, 0.09, { type: 'sine', vol: 0.2, slide: 880 }); },
+  chime() { [784, 988, 1175].forEach((f, i) => tone(f, 0.35, { type: 'sine', vol: 0.12, when: i * 0.07 })); },
+  oops() { tone(392, 0.25, { type: 'triangle', vol: 0.12, slide: 330 }); },
+  drift() { tone(660, 0.3, { type: 'sine', vol: 0.06, slide: 990 }); },
+  open() { tone(523, 0.2, { type: 'sine', vol: 0.1 }); tone(659, 0.25, { type: 'sine', vol: 0.08, when: 0.08 }); },
+  done() { [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.4, { type: 'sine', vol: 0.12, when: i * 0.12 })); },
+  sad() { [392, 349, 330].forEach((f, i) => tone(f, 0.35, { type: 'triangle', vol: 0.1, when: i * 0.18 })); },
+};

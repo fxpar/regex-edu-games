@@ -1,7 +1,11 @@
-# Regex Arcade 3D
+# Regex Arcade
 
-Apprendre les expressions régulières en jouant : une salle d'arcade néon en 3D (Three.js) dont chaque borne est un mini-jeu.
-Une notion par niveau, un cours d'une carte, des vies à gérer.
+Apprendre les expressions régulières en jouant. Une notion par niveau, un cours d'une carte, des vies à gérer.
+
+L'accueil propose deux univers, pour des publics différents, avec **les mêmes niveaux** :
+
+- **La salle d'arcade** : salle néon en 3D (Three.js) dont chaque borne est un mini-jeu ; Mach-Regex est un jeu de tir rapide en jet.
+- **Le jardin des bulles** : version douce, claire et lente. Des mots flottent dans des bulles : on cueille ceux qui correspondent.
 
 100 % côté client : HTML, CSS et JavaScript (modules ES), sans étape de build ni serveur applicatif.
 Déployable tel quel sur GitHub Pages.
@@ -16,7 +20,12 @@ python -m http.server 8765
 
 Puis ouvrir <http://localhost:8765>. Le dossier peut aussi être servi par UwAmp, ou par n'importe quel serveur statique.
 
-Ajouter `?unlock=all` à l'adresse débloque toutes les escadrilles pour la session, sans l'enregistrer. C'est pratique en classe ou pour tester.
+Paramètres d'adresse utiles en classe :
+
+- `?univers=arcade` ou `?univers=jardin` : ouvre directement un univers, sans passer par l'accueil (lien à donner à un groupe d'élèves) ;
+- `?unlock=all` : débloque toutes les escadrilles et parcelles pour la session, sans l'enregistrer.
+
+Ils se combinent : `?univers=jardin&unlock=all`.
 
 ## Déployer sur GitHub Pages
 
@@ -26,7 +35,18 @@ Ajouter `?unlock=all` à l'adresse débloque toutes les escadrilles pour la sess
 
 Three.js est chargé depuis jsDelivr via un `importmap`, il n'y a rien à installer.
 
-## Les mini-jeux
+## Le jardin des bulles
+
+- Les 6 escadrilles deviennent des **parcelles**, chaque niveau une **fleur** à faire éclore.
+- La regex est affichée sur un panneau ; des bulles montent lentement (16 s au début, 12 s à la fin), 2 à 4 à la fois.
+- **Cueillir** une bulle (clic, doigt, ou `Tab` + `Entrée`) : si le mot correspond, il rejoint le bocal ; sinon, −1 feuille 🍃 et la raison s'affiche.
+- Une bonne bulle **manquée repasse une fois** plus tard. Une bulle-piège qui s'envole rapporte quelques points et affiche sa raison.
+- La fleur éclot si au moins **70 %** des bons mots sont cueillis ; sinon on la réessaie, sans perdre ses feuilles.
+- Comme dans l'arcade : 5 feuilles par parcelle, cours libre 30 s puis payant (1 feuille), bilan des erreurs, +1 feuille pour une fleur sans faute.
+- Pas de musique, sons doux, thème clair (police Nunito, couleurs pastel).
+
+## La salle d'arcade
+
 
 | Borne | État | Principe |
 |---|---|---|
@@ -62,8 +82,10 @@ Three.js est chargé depuis jsDelivr via un `importmap`, il n'y a rien à instal
 ```
 index.html            écrans (hub, escadrilles, jeu), HUD, modale
 css/style.css         thème néon, HUD, version mobile (< 760 px)
-data/missions.json    configuration, mini-jeux, escadrilles et niveaux
-js/main.js            chargement, rendu partagé, navigation entre écrans
+css/garden.css        accueil et thème doux du jardin (n'altère pas le thème néon)
+data/missions.json    configuration, mini-jeux, escadrilles et niveaux (communs aux deux univers)
+js/main.js            chargement, rendu partagé, navigation entre écrans (accueil, arcade, jardin)
+js/garden-game.js     le jardin des bulles : bulles, cueillette, feuilles, parcelles (DOM, sans 3D)
 js/missions.js        préparation des niveaux, correspondance, vagues et difficulté
 js/hub.js             salle d'arcade 3D et bornes cliquables
 js/jet-game.js        mini-jeu Jet Interceptor : boucle, visée, drones, missiles, vies, chrono
@@ -74,6 +96,12 @@ js/audio.js           effets sonores et musique synthétisés (WebAudio)
 js/storage.js         progression dans localStorage
 tests/validate-missions.mjs   vérification automatique des niveaux
 ```
+
+## Ajouter un jeu
+
+Chaque jeu est un module qui expose `scene`, `enter()`, `exit()`, `update(dt)` et `resize(w, h)` ; `main.js` l'active avec `app.activate(jeu)`.
+Un jeu sans 3D met `scene = null` : le canvas Three.js est alors masqué et rien n'est rendu. Les niveaux se lisent dans `app.data.levels`,
+et `js/missions.js` fournit la correspondance (`levelMatcher`) et le tirage des vagues (`buildWave`).
 
 ## Ajouter ou modifier un niveau
 

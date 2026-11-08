@@ -1,5 +1,9 @@
 # Regex Arcade
 
+**▶ Démo en ligne : <https://fxpar.github.io/regex-edu-games/>**
+
+Accès direct : [salle d'arcade](https://fxpar.github.io/regex-edu-games/?univers=arcade) · [jardin des bulles](https://fxpar.github.io/regex-edu-games/?univers=jardin)
+
 Apprendre les expressions régulières en jouant. Une notion par niveau, un cours d'une carte, des vies à gérer.
 
 L'accueil propose deux univers, pour des publics différents, avec **les mêmes niveaux** :
@@ -12,13 +16,26 @@ Déployable tel quel sur GitHub Pages.
 
 ## Lancer en local
 
-Les modules ES et le `fetch` du JSON ne fonctionnent pas en `file://` : il faut un petit serveur web.
+Le jeu doit être servi par un serveur web, même local : UwAmp, WAMP, XAMPP, l'extension Live Server de VS Code, etc.
+Il suffit de placer le dossier dans le répertoire web (par exemple `UwAmp/www/`) et d'ouvrir `http://localhost/regex-edu-games/`.
+
+**Sans rien installer, avec Firefox (version 153 ou plus)** : le « mode local » des outils de développement sert lui-même les fichiers en https.
+
+- *Ponctuellement* : ouvrir `index.html` (double-clic), ouvrir les outils de développement (`F12`, ou clic droit → *Inspecter*), puis cliquer sur **Essayer** dans le bandeau qui apparaît en haut. La page est rechargée depuis une adresse https et le jeu démarre. Ce réglage disparaît à la fermeture des outils de développement.
+- *Une fois pour toutes* : dans les outils de développement, ouvrir les **Paramètres** (`F1`), section *Mode local*, et ajouter le dossier du jeu. Firefox le sert alors à une adresse fixe (par défaut en `firefox.localhost`) chaque fois que les outils de développement sont ouverts.
+
+Voir la [documentation de Mozilla sur le mode local](https://firefox-source-docs.mozilla.org/devtools-user/local_mode/index.html).
+
+**Autre solution**, si Python est installé :
 
 ```bash
 python -m http.server 8765
 ```
 
-Puis ouvrir <http://localhost:8765>. Le dossier peut aussi être servi par UwAmp, ou par n'importe quel serveur statique.
+puis ouvrir <http://localhost:8765>.
+
+Pourquoi un serveur ? Ouvert par un simple double-clic (adresse en `file://`), le navigateur bloque le chargement
+des modules JavaScript et du fichier `data/missions.json` : le jeu reste sur « CHARGEMENT… ».
 
 Paramètres d'adresse utiles en classe :
 

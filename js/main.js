@@ -9,8 +9,9 @@ import { JetGame } from './jet-game.js';
 import { loadProgress, saveProgress, resetProgress, UNLOCK_ALL } from './storage.js';
 import { initAudio, setMuted, isMuted, sfx, startMusic, stopMusic } from './audio.js';
 import { $, esc, toast, closeModal, modalOpen } from './ui.js';
+import { prepareData } from './missions.js';
 
-const data = await fetch('data/levels.json').then((r) => r.json());
+const data = prepareData(await fetch('data/missions.json').then((r) => r.json()));
 await document.fonts?.ready;
 
 const canvas = $('#gl');
@@ -47,6 +48,7 @@ const app = {
   },
   toHub() {
     closeModal();
+    document.body.classList.remove('in-game');
     this.activate(hub);
     this.setScreen('screen-hub');
     renderHubCards();
@@ -60,6 +62,7 @@ const app = {
   },
   openSquadrons() {
     closeModal();
+    document.body.classList.remove('in-game');
     this.activate(hub);
     this.setScreen('screen-squad');
     renderSquadrons();
@@ -68,6 +71,7 @@ const app = {
     initAudio();
     const squad = data.games.find((g) => g.id === 'jet').squadrons[idx];
     this.setScreen('screen-game');
+    document.body.classList.add('in-game');
     this.activate(jet);
     jet.start(squad);
   },
@@ -98,7 +102,7 @@ function renderSquadrons() {
   $('#squad-list').innerHTML = game.squadrons.map((s, i) => {
     const locked = i + 1 > unlocked;
     const best = s.levels.reduce((a, id) => a + (app.progress.best[id] ?? 0), 0);
-    const chips = s.levels.map((id) => `<span class="chip ${app.progress.done[id] ? 'done' : ''}" title="${esc(data.levels[id].title)}">${esc(data.levels[id].notion)}</span>`).join('');
+    const chips = s.levels.map((id) => `<span class="chip ${app.progress.done[id] ? 'done' : ''}" title="/${esc(data.levels[id].regex)}/">${esc(data.levels[id].notion)}</span>`).join('');
     return `<article class="squad ${locked ? 'locked' : ''}">
       <h3>${esc(s.name)}</h3>
       <div class="chips">${chips}</div>

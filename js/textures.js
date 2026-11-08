@@ -59,11 +59,9 @@ export function reticleTexture() {
 }
 
 const STATUS_COLOR = {
-  locked: '#2bff88',
-  wrong: '#ff3860',
-  iff: '#ff3860',
-  none: '#ffb000',
-  clear: '#ffb000',
+  neutral: '#ffb000', // en approche
+  aim: '#00f0ff',     // sous le viseur
+  locked: '#ff2bd6',  // missile en route
 };
 
 /**
@@ -84,7 +82,7 @@ export function labelTexture(text, spans, status) {
   // panneau
   g.fillStyle = 'rgba(6,0,24,0.82)';
   g.strokeStyle = col;
-  g.lineWidth = 4;
+  g.lineWidth = status === 'neutral' ? 4 : 8;
   roundRect(g, 2, 2, c.width - 4, h - 4, 14);
   g.fill();
   g.stroke();

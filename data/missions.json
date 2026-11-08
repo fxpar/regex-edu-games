@@ -1,0 +1,2270 @@
+{
+  "version": 2,
+  "config": {
+    "livesPerSquadron": 5,
+    "graceSeconds": 30,
+    "spawnDistance": 650,
+    "impactDistance": 16
+  },
+  "conventions": {
+    "syntaxe": "JavaScript",
+    "mode_entier": "le mot entier doit correspondre (équivaut à ^(?:regex)$)",
+    "mode_contient": "il suffit qu'une partie du mot corresponde (regex.test(mot))",
+    "sensible_a_la_casse": true
+  },
+  "games": [
+    {
+      "id": "jet",
+      "title": "Mach-Regex",
+      "subtitle": "Jet Interceptor",
+      "status": "playable",
+      "color": "#00f0ff"
+    },
+    {
+      "id": "forge",
+      "title": "Regex Forge",
+      "subtitle": "Remplacer & réécrire",
+      "status": "soon",
+      "color": "#ff2bd6",
+      "notions": [
+        "\\1",
+        "\\n",
+        "Civilités"
+      ]
+    },
+    {
+      "id": "cellar",
+      "title": "Cellar Scan",
+      "subtitle": "Compter & tester",
+      "status": "soon",
+      "color": "#ffb000",
+      "notions": [
+        "REGEX.TEST",
+        "somme(n())"
+      ]
+    }
+  ],
+  "escadrilles": [
+    {
+      "id": 1,
+      "nom": "Escadrille Alpha — Les lettres",
+      "niveaux": [
+        {
+          "id": "1-1",
+          "notion": "Littéraux",
+          "regex": "chat",
+          "mode": "contient",
+          "cours": [
+            "Une regex simple cherche ces lettres, dans cet ordre.",
+            "Ici on cherche « chat » n'importe où dans le mot."
+          ],
+          "exemple": {
+            "mot": "achat",
+            "explication": "a + « chat » : les 4 lettres s'y suivent."
+          },
+          "cibles": [
+            "chat",
+            "chaton",
+            "chatte",
+            "chatons",
+            "achat",
+            "achats",
+            "rachat",
+            "tchat",
+            "chatbot",
+            "chatoyer",
+            "le chat",
+            "chatterton"
+          ],
+          "pieges": [
+            {
+              "mot": "Chat",
+              "raison": "C majuscule : la casse compte"
+            },
+            {
+              "mot": "cht",
+              "raison": "Il manque le a"
+            },
+            {
+              "mot": "chta",
+              "raison": "t et a inversés"
+            },
+            {
+              "mot": "château",
+              "raison": "â n'est pas a : ce n'est pas « chat »"
+            },
+            {
+              "mot": "chant",
+              "raison": "Un n s'est glissé entre a et t"
+            },
+            {
+              "mot": "chas",
+              "raison": "Il manque le t final"
+            },
+            {
+              "mot": "chapeau",
+              "raison": "« cha » puis p, pas t"
+            },
+            {
+              "mot": "chalet",
+              "raison": "« cha » puis l, pas t"
+            },
+            {
+              "mot": "hat",
+              "raison": "Il manque le c du début"
+            },
+            {
+              "mot": "ch at",
+              "raison": "Un espace coupe le mot"
+            },
+            {
+              "mot": "c-h-a-t",
+              "raison": "Des tirets séparent les lettres"
+            },
+            {
+              "mot": "cahot",
+              "raison": "Mêmes lettres, mauvais ordre"
+            }
+          ]
+        },
+        {
+          "id": "1-2",
+          "notion": "Le point .",
+          "regex": "p..e",
+          "mode": "entier",
+          "cours": [
+            "Le point . remplace exactement UN caractère, n'importe lequel.",
+            "p..e : un p, deux caractères quelconques, puis un e."
+          ],
+          "exemple": {
+            "mot": "pâte",
+            "explication": "p, puis â et t (deux caractères), puis e."
+          },
+          "cibles": [
+            "page",
+            "pile",
+            "pipe",
+            "pôle",
+            "pâte",
+            "puce",
+            "pure",
+            "pose",
+            "pèse",
+            "pire",
+            "pâle",
+            "prie"
+          ],
+          "pieges": [
+            {
+              "mot": "pages",
+              "raison": "5 lettres : un caractère de trop"
+            },
+            {
+              "mot": "pie",
+              "raison": "3 lettres : il manque un caractère"
+            },
+            {
+              "mot": "pe",
+              "raison": "Il manque les deux caractères du milieu"
+            },
+            {
+              "mot": "Page",
+              "raison": "P majuscule : la casse compte"
+            },
+            {
+              "mot": "pied",
+              "raison": "Finit par d au lieu de e"
+            },
+            {
+              "mot": "pull",
+              "raison": "Finit par l au lieu de e"
+            },
+            {
+              "mot": "pâté",
+              "raison": "é n'est pas e"
+            },
+            {
+              "mot": "rape",
+              "raison": "Commence par r au lieu de p"
+            },
+            {
+              "mot": "épie",
+              "raison": "Commence par é au lieu de p"
+            },
+            {
+              "mot": "pomme",
+              "raison": "Trois caractères au milieu, pas deux"
+            },
+            {
+              "mot": "pliée",
+              "raison": "Trop long et finit par é"
+            },
+            {
+              "mot": "pâtés",
+              "raison": "Trop long : le s final est de trop"
+            }
+          ]
+        },
+        {
+          "id": "1-3",
+          "notion": "Classes [abc]",
+          "regex": "[clmprv]a[cgls]e",
+          "mode": "entier",
+          "cours": [
+            "[abc] accepte UN seul caractère parmi ceux de la liste.",
+            "[clmprv] : c, l, m, p, r ou v. Rien d'autre."
+          ],
+          "exemple": {
+            "mot": "page",
+            "explication": "p est dans [clmprv], g est dans [cgls]."
+          },
+          "cibles": [
+            "cage",
+            "cale",
+            "case",
+            "lace",
+            "mage",
+            "male",
+            "page",
+            "pale",
+            "race",
+            "rage",
+            "rase",
+            "vase"
+          ],
+          "pieges": [
+            {
+              "mot": "base",
+              "raison": "b n'est pas dans [clmprv]"
+            },
+            {
+              "mot": "sale",
+              "raison": "s n'est pas dans la 1re classe"
+            },
+            {
+              "mot": "gare",
+              "raison": "g et r sont hors des classes"
+            },
+            {
+              "mot": "came",
+              "raison": "m n'est pas dans [cgls]"
+            },
+            {
+              "mot": "lame",
+              "raison": "m n'est pas dans [cgls]"
+            },
+            {
+              "mot": "cave",
+              "raison": "v n'est pas dans [cgls]"
+            },
+            {
+              "mot": "vise",
+              "raison": "i au lieu de a en 2e position"
+            },
+            {
+              "mot": "Cage",
+              "raison": "C majuscule absent de la classe"
+            },
+            {
+              "mot": "pâle",
+              "raison": "â n'est pas a"
+            },
+            {
+              "mot": "rate",
+              "raison": "t n'est pas dans [cgls]"
+            },
+            {
+              "mot": "cages",
+              "raison": "Trop long : 5 caractères"
+            },
+            {
+              "mot": "cas",
+              "raison": "Trop court : il manque le e"
+            }
+          ]
+        },
+        {
+          "id": "1-4",
+          "notion": "Intervalles [a-z]",
+          "regex": "[a-h][1-8]",
+          "mode": "entier",
+          "cours": [
+            "[a-h] couvre toutes les lettres de a à h ; [1-8] de 1 à 8.",
+            "Parfait pour les cases d'un échiquier : e4, d5…"
+          ],
+          "exemple": {
+            "mot": "e4",
+            "explication": "e est entre a et h, 4 entre 1 et 8."
+          },
+          "cibles": [
+            "e4",
+            "d5",
+            "a1",
+            "h8",
+            "c3",
+            "f7",
+            "g2",
+            "b6",
+            "e2",
+            "d7",
+            "h1",
+            "a8"
+          ],
+          "pieges": [
+            {
+              "mot": "i4",
+              "raison": "i est après h : hors intervalle"
+            },
+            {
+              "mot": "z1",
+              "raison": "z est loin après h"
+            },
+            {
+              "mot": "é4",
+              "raison": "é ne fait pas partie de a-h"
+            },
+            {
+              "mot": "E4",
+              "raison": "E majuscule n'est pas dans [a-h]"
+            },
+            {
+              "mot": "e9",
+              "raison": "9 dépasse l'intervalle 1-8"
+            },
+            {
+              "mot": "e0",
+              "raison": "0 est avant 1 : hors intervalle"
+            },
+            {
+              "mot": "h10",
+              "raison": "10 fait deux chiffres"
+            },
+            {
+              "mot": "e44",
+              "raison": "Un chiffre de trop"
+            },
+            {
+              "mot": "e",
+              "raison": "Il manque le chiffre"
+            },
+            {
+              "mot": "4e",
+              "raison": "Ordre inversé : la lettre d'abord"
+            },
+            {
+              "mot": "ee",
+              "raison": "Deux lettres, pas de chiffre"
+            },
+            {
+              "mot": "e-4",
+              "raison": "Le tiret est en trop"
+            }
+          ]
+        },
+        {
+          "id": "1-5",
+          "notion": "Négation [^…]",
+          "regex": "[^aeiouy]ou[^aeiouy]",
+          "mode": "entier",
+          "cours": [
+            "[^aeiouy] accepte un caractère SAUF ceux de la liste.",
+            "Ici : une non-voyelle, « ou », puis une non-voyelle."
+          ],
+          "exemple": {
+            "mot": "loup",
+            "explication": "l et p ne sont pas des voyelles."
+          },
+          "cibles": [
+            "bout",
+            "cour",
+            "loup",
+            "sous",
+            "tout",
+            "pour",
+            "jour",
+            "four",
+            "nous",
+            "vous",
+            "doux",
+            "roux"
+          ],
+          "pieges": [
+            {
+              "mot": "aout",
+              "raison": "a est une voyelle : interdit au début"
+            },
+            {
+              "mot": "ours",
+              "raison": "o au début : voyelle interdite"
+            },
+            {
+              "mot": "joue",
+              "raison": "e à la fin : voyelle interdite"
+            },
+            {
+              "mot": "roue",
+              "raison": "e final : voyelle interdite"
+            },
+            {
+              "mot": "Jouy",
+              "raison": "y final : il est dans la liste interdite"
+            },
+            {
+              "mot": "goût",
+              "raison": "û n'est pas u : « oû » ≠ « ou »"
+            },
+            {
+              "mot": "BOUT",
+              "raison": "« OU » majuscule n'est pas « ou »"
+            },
+            {
+              "mot": "bord",
+              "raison": "« or » au milieu, pas « ou »"
+            },
+            {
+              "mot": "beau",
+              "raison": "« ea » au milieu, pas « ou »"
+            },
+            {
+              "mot": "trou",
+              "raison": "« ou » doit être en 2e position"
+            },
+            {
+              "mot": "cou",
+              "raison": "Trop court : il manque la fin"
+            },
+            {
+              "mot": "cours",
+              "raison": "Trop long : 5 caractères"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Escadrille Bravo — Les raccourcis",
+      "niveaux": [
+        {
+          "id": "2-1",
+          "notion": "Chiffres \\d",
+          "regex": "\\d\\d:\\d\\d",
+          "mode": "entier",
+          "cours": [
+            "\\d remplace un chiffre de 0 à 9 (comme [0-9]).",
+            "\\d\\d:\\d\\d décrit une heure : deux chiffres, :, deux chiffres."
+          ],
+          "exemple": {
+            "mot": "08:30",
+            "explication": "0 et 8, deux-points, puis 3 et 0."
+          },
+          "cibles": [
+            "08:30",
+            "12:00",
+            "23:59",
+            "07:15",
+            "19:45",
+            "00:00",
+            "14:20",
+            "06:05",
+            "21:10",
+            "10:01",
+            "16:40",
+            "11:11"
+          ],
+          "pieges": [
+            {
+              "mot": "8:30",
+              "raison": "Un seul chiffre avant les deux-points"
+            },
+            {
+              "mot": "08:3",
+              "raison": "Un seul chiffre après les deux-points"
+            },
+            {
+              "mot": "08:300",
+              "raison": "Trois chiffres à la fin"
+            },
+            {
+              "mot": "123:45",
+              "raison": "Trois chiffres au début"
+            },
+            {
+              "mot": "0830",
+              "raison": "Il manque les deux-points"
+            },
+            {
+              "mot": "08h30",
+              "raison": "h au lieu de deux-points"
+            },
+            {
+              "mot": "08.30",
+              "raison": "Un point au lieu de deux-points"
+            },
+            {
+              "mot": "08-30",
+              "raison": "Un tiret au lieu de deux-points"
+            },
+            {
+              "mot": "12 :00",
+              "raison": "Espace en trop avant les deux-points"
+            },
+            {
+              "mot": "1O:00",
+              "raison": "O est une lettre, pas le chiffre 0"
+            },
+            {
+              "mot": "12:00h",
+              "raison": "Le h final est en trop"
+            },
+            {
+              "mot": "midi",
+              "raison": "Des lettres, aucun chiffre"
+            }
+          ]
+        },
+        {
+          "id": "2-2",
+          "notion": "Caractères de mot \\w",
+          "regex": "#\\w\\w\\w\\w",
+          "mode": "entier",
+          "cours": [
+            "\\w = lettre sans accent, chiffre ou _ (soulignement).",
+            "Attention : é, ë, œ, -, ! ou l'espace ne sont PAS des \\w."
+          ],
+          "exemple": {
+            "mot": "#JO24",
+            "explication": "J, O, 2, 4 : quatre caractères \\w."
+          },
+          "cibles": [
+            "#yoga",
+            "#surf",
+            "#jeux",
+            "#food",
+            "#rock",
+            "#code",
+            "#mode",
+            "#golf",
+            "#2026",
+            "#JO24",
+            "#mer_",
+            "#Lyon"
+          ],
+          "pieges": [
+            {
+              "mot": "#vélo",
+              "raison": "é a un accent : ce n'est pas un \\w"
+            },
+            {
+              "mot": "#Noël",
+              "raison": "ë a un tréma : ce n'est pas un \\w"
+            },
+            {
+              "mot": "#bœuf",
+              "raison": "œ n'est pas un \\w"
+            },
+            {
+              "mot": "#J-30",
+              "raison": "Le tiret n'est pas un \\w"
+            },
+            {
+              "mot": "#wow!",
+              "raison": "! n'est pas un \\w"
+            },
+            {
+              "mot": "#sky.",
+              "raison": "Le point n'est pas un \\w"
+            },
+            {
+              "mot": "# zen",
+              "raison": "L'espace n'est pas un \\w"
+            },
+            {
+              "mot": "#Paris",
+              "raison": "5 caractères après # : un de trop"
+            },
+            {
+              "mot": "#top10",
+              "raison": "5 caractères après # : un de trop"
+            },
+            {
+              "mot": "#art",
+              "raison": "3 caractères après # : un de moins"
+            },
+            {
+              "mot": "yoga",
+              "raison": "Il manque le # au début"
+            },
+            {
+              "mot": "@yoga",
+              "raison": "@ au lieu de #"
+            }
+          ]
+        },
+        {
+          "id": "2-3",
+          "notion": "Espaces \\s",
+          "regex": "\\d\\d\\s\\w\\w",
+          "mode": "entier",
+          "cours": [
+            "\\s remplace UN espace (ou une tabulation).",
+            "Ici : deux chiffres, un espace, une unité de 2 lettres."
+          ],
+          "exemple": {
+            "mot": "42 km",
+            "explication": "4 et 2, un espace, puis k et m."
+          },
+          "cibles": [
+            "10 km",
+            "42 km",
+            "20 kg",
+            "50 cl",
+            "75 cl",
+            "25 cm",
+            "30 mn",
+            "90 kg",
+            "15 mm",
+            "12 Go",
+            "64 Go",
+            "40 dB"
+          ],
+          "pieges": [
+            {
+              "mot": "10km",
+              "raison": "Il manque l'espace"
+            },
+            {
+              "mot": "10  km",
+              "raison": "Deux espaces : un seul \\s attendu"
+            },
+            {
+              "mot": "10_km",
+              "raison": "_ n'est pas un espace"
+            },
+            {
+              "mot": "10-km",
+              "raison": "Un tiret n'est pas un espace"
+            },
+            {
+              "mot": "1 km",
+              "raison": "Un seul chiffre au début"
+            },
+            {
+              "mot": "100 km",
+              "raison": "Trois chiffres au début"
+            },
+            {
+              "mot": "10 kms",
+              "raison": "Unité de 3 lettres : une de trop"
+            },
+            {
+              "mot": "10 g",
+              "raison": "Unité d'une seule lettre"
+            },
+            {
+              "mot": "25 µm",
+              "raison": "µ n'est pas un \\w"
+            },
+            {
+              "mot": "18 °C",
+              "raison": "° n'est pas un \\w"
+            },
+            {
+              "mot": "dix km",
+              "raison": "Des lettres au lieu des chiffres"
+            },
+            {
+              "mot": "km 10",
+              "raison": "Ordre inversé : chiffres d'abord"
+            }
+          ]
+        },
+        {
+          "id": "2-4",
+          "notion": "Échappement \\. \\$",
+          "regex": "\\$\\d\\d\\.\\d\\d",
+          "mode": "entier",
+          "cours": [
+            "Seul, . veut dire « n'importe quoi » et $ a un sens spécial.",
+            "Avec \\ devant (\\. \\$), ils redeviennent un vrai point, un vrai $."
+          ],
+          "exemple": {
+            "mot": "$12.99",
+            "explication": "\\$ = le signe $, \\. = un vrai point."
+          },
+          "cibles": [
+            "$12.99",
+            "$10.00",
+            "$45.50",
+            "$99.99",
+            "$19.90",
+            "$25.00",
+            "$75.25",
+            "$30.10",
+            "$60.05",
+            "$15.49",
+            "$88.88",
+            "$42.42"
+          ],
+          "pieges": [
+            {
+              "mot": "$12x99",
+              "raison": "\\. exige un vrai point, pas un x"
+            },
+            {
+              "mot": "$12,99",
+              "raison": "Virgule au lieu du point"
+            },
+            {
+              "mot": "$12-99",
+              "raison": "Tiret au lieu du point"
+            },
+            {
+              "mot": "$12 99",
+              "raison": "Espace au lieu du point"
+            },
+            {
+              "mot": "12.99",
+              "raison": "Il manque le signe $"
+            },
+            {
+              "mot": "€12.99",
+              "raison": "€ au lieu de $"
+            },
+            {
+              "mot": "S12.99",
+              "raison": "La lettre S n'est pas le signe $"
+            },
+            {
+              "mot": "12.99$",
+              "raison": "Le $ doit être au début"
+            },
+            {
+              "mot": "$ 12.99",
+              "raison": "Espace en trop après le $"
+            },
+            {
+              "mot": "$1.99",
+              "raison": "Un seul chiffre avant le point"
+            },
+            {
+              "mot": "$123.99",
+              "raison": "Trois chiffres avant le point"
+            },
+            {
+              "mot": "$12.9",
+              "raison": "Un seul chiffre après le point"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Escadrille Charlie — Les quantificateurs",
+      "niveaux": [
+        {
+          "id": "3-1",
+          "notion": "Optionnel ?",
+          "regex": "\\d\\d?h\\d\\d",
+          "mode": "entier",
+          "cours": [
+            "? rend facultatif ce qui le précède : 0 ou 1 fois.",
+            "\\d\\d? : un chiffre, puis peut-être un second."
+          ],
+          "exemple": {
+            "mot": "9h30",
+            "explication": "Le 2e chiffre de l'heure est absent : permis."
+          },
+          "cibles": [
+            "9h30",
+            "14h00",
+            "7h15",
+            "18h45",
+            "0h05",
+            "23h59",
+            "12h30",
+            "6h40",
+            "10h10",
+            "8h00",
+            "21h15",
+            "5h55"
+          ],
+          "pieges": [
+            {
+              "mot": "h30",
+              "raison": "Il faut au moins un chiffre avant h"
+            },
+            {
+              "mot": "123h00",
+              "raison": "Trois chiffres : ? n'en ajoute qu'un"
+            },
+            {
+              "mot": "9h3",
+              "raison": "Minutes : deux chiffres obligatoires"
+            },
+            {
+              "mot": "9h300",
+              "raison": "Minutes : trois chiffres, un de trop"
+            },
+            {
+              "mot": "9h",
+              "raison": "Les minutes manquent"
+            },
+            {
+              "mot": "9H30",
+              "raison": "H majuscule : la casse compte"
+            },
+            {
+              "mot": "9:30",
+              "raison": "Deux-points au lieu de h"
+            },
+            {
+              "mot": "9 h 30",
+              "raison": "Des espaces en trop"
+            },
+            {
+              "mot": "9h30m",
+              "raison": "Le m final est en trop"
+            },
+            {
+              "mot": "9h3O",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "9.5h",
+              "raison": "Point et ordre incorrects"
+            },
+            {
+              "mot": "1/2h",
+              "raison": "/ n'est pas un chiffre"
+            }
+          ]
+        },
+        {
+          "id": "3-2",
+          "notion": "Étoile *",
+          "regex": "mi*a*ou",
+          "mode": "entier",
+          "cours": [
+            "* répète ce qui précède 0, 1 ou plusieurs fois.",
+            "Attention : zéro fois est permis ! « mou » correspond."
+          ],
+          "exemple": {
+            "mot": "miiiaou",
+            "explication": "i répété 3 fois, a une fois : OK."
+          },
+          "cibles": [
+            "miaou",
+            "miiaou",
+            "miaaou",
+            "miiiaou",
+            "miaaaou",
+            "mou",
+            "miou",
+            "maou",
+            "miiiiiaou",
+            "miaaaaou",
+            "miiaaou",
+            "miiiaaaou"
+          ],
+          "pieges": [
+            {
+              "mot": "Miaou",
+              "raison": "M majuscule : la casse compte"
+            },
+            {
+              "mot": "miaouu",
+              "raison": "u n'a pas d'étoile : un seul u"
+            },
+            {
+              "mot": "miaoou",
+              "raison": "o n'a pas d'étoile : un seul o"
+            },
+            {
+              "mot": "mmiaou",
+              "raison": "m n'a pas d'étoile : un seul m"
+            },
+            {
+              "mot": "maiou",
+              "raison": "Les i doivent venir avant les a"
+            },
+            {
+              "mot": "miao",
+              "raison": "Il manque le u final"
+            },
+            {
+              "mot": "iaou",
+              "raison": "Il manque le m du début"
+            },
+            {
+              "mot": "miaouh",
+              "raison": "Le h final est en trop"
+            },
+            {
+              "mot": "mi aou",
+              "raison": "L'espace n'est pas autorisé"
+            },
+            {
+              "mot": "miàou",
+              "raison": "à n'est pas a"
+            },
+            {
+              "mot": "myaou",
+              "raison": "y n'est pas i"
+            },
+            {
+              "mot": "meow",
+              "raison": "Ce chat parle anglais : e, w interdits"
+            }
+          ]
+        },
+        {
+          "id": "3-3",
+          "notion": "Plus +",
+          "regex": "\\d+,\\d\\d\\s€",
+          "mode": "entier",
+          "cours": [
+            "+ répète ce qui précède 1 fois ou plus (jamais zéro).",
+            "\\d+ : au moins un chiffre, autant qu'on veut."
+          ],
+          "exemple": {
+            "mot": "149,00 €",
+            "explication": "\\d+ prend 1, 4 et 9 ; puis ,00 et €."
+          },
+          "cibles": [
+            "1,99 €",
+            "12,50 €",
+            "149,00 €",
+            "0,99 €",
+            "2499,99 €",
+            "5,00 €",
+            "39,90 €",
+            "10000,00 €",
+            "7,49 €",
+            "89,95 €",
+            "349,00 €",
+            "3,50 €"
+          ],
+          "pieges": [
+            {
+              "mot": ",99 €",
+              "raison": "+ exige au moins un chiffre avant"
+            },
+            {
+              "mot": "12 €",
+              "raison": "Il manque les centimes"
+            },
+            {
+              "mot": "12,5 €",
+              "raison": "Un seul chiffre de centimes"
+            },
+            {
+              "mot": "12,500 €",
+              "raison": "Trois chiffres de centimes"
+            },
+            {
+              "mot": "12.50 €",
+              "raison": "Point au lieu de la virgule"
+            },
+            {
+              "mot": "12,50€",
+              "raison": "Il manque l'espace avant €"
+            },
+            {
+              "mot": "1 299,00 €",
+              "raison": "L'espace coupe la suite de chiffres"
+            },
+            {
+              "mot": "€ 12,50",
+              "raison": "Le € doit être à la fin"
+            },
+            {
+              "mot": "12,50 $",
+              "raison": "$ au lieu de €"
+            },
+            {
+              "mot": "12,50 EUR",
+              "raison": "EUR au lieu du symbole €"
+            },
+            {
+              "mot": "1O,50 €",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "-5,00 €",
+              "raison": "Le signe moins n'est pas prévu"
+            }
+          ]
+        },
+        {
+          "id": "3-4",
+          "notion": "Nombre exact {n}",
+          "regex": "[A-Z]{2}-\\d{3}-[A-Z]{2}",
+          "mode": "entier",
+          "cours": [
+            "{n} répète exactement n fois : \\d{3} = trois chiffres.",
+            "Une plaque française : AB-123-CD."
+          ],
+          "exemple": {
+            "mot": "AB-123-CD",
+            "explication": "2 majuscules, tiret, 3 chiffres, tiret, 2 majuscules."
+          },
+          "cibles": [
+            "AB-123-CD",
+            "GH-456-JK",
+            "FX-001-ZZ",
+            "EE-999-AA",
+            "CL-208-MV",
+            "BZ-750-RT",
+            "DA-314-PL",
+            "HN-042-QS",
+            "KP-777-LW",
+            "MR-120-VE",
+            "TT-505-XY",
+            "ZA-860-BN"
+          ],
+          "pieges": [
+            {
+              "mot": "AB-12-CD",
+              "raison": "Deux chiffres au lieu de trois"
+            },
+            {
+              "mot": "AB-1234-CD",
+              "raison": "Quatre chiffres au lieu de trois"
+            },
+            {
+              "mot": "A-123-CD",
+              "raison": "Une seule lettre au début"
+            },
+            {
+              "mot": "ABC-123-CD",
+              "raison": "Trois lettres au début"
+            },
+            {
+              "mot": "AB-123-C1",
+              "raison": "1 est un chiffre, pas une lettre"
+            },
+            {
+              "mot": "ab-123-cd",
+              "raison": "Minuscules : [A-Z] veut des majuscules"
+            },
+            {
+              "mot": "ÉB-123-CD",
+              "raison": "É n'est pas dans A-Z"
+            },
+            {
+              "mot": "AB123CD",
+              "raison": "Il manque les tirets"
+            },
+            {
+              "mot": "AB 123 CD",
+              "raison": "Espaces au lieu des tirets"
+            },
+            {
+              "mot": "AB-123-CD-",
+              "raison": "Tiret final en trop"
+            },
+            {
+              "mot": "1234 AB 33",
+              "raison": "Ancien format de plaque"
+            },
+            {
+              "mot": "123-AB-45",
+              "raison": "Chiffres et lettres inversés"
+            }
+          ]
+        },
+        {
+          "id": "3-5",
+          "notion": "Intervalle {n,m}",
+          "regex": "\\w{3,8}",
+          "mode": "entier",
+          "cours": [
+            "{n,m} répète entre n et m fois, bornes comprises.",
+            "\\w{3,8} : un pseudo de 3 à 8 caractères \\w."
+          ],
+          "exemple": {
+            "mot": "Alice42",
+            "explication": "7 caractères \\w : entre 3 et 8."
+          },
+          "cibles": [
+            "Zoe",
+            "Max",
+            "Lucas",
+            "Alice42",
+            "max_99",
+            "Bob",
+            "Nina2026",
+            "Kevin",
+            "Sam_b",
+            "Lou",
+            "Hugo_7",
+            "007"
+          ],
+          "pieges": [
+            {
+              "mot": "Al",
+              "raison": "2 caractères : minimum 3"
+            },
+            {
+              "mot": "Jo",
+              "raison": "Trop court : 2 caractères"
+            },
+            {
+              "mot": "Maximilien",
+              "raison": "10 caractères : maximum 8"
+            },
+            {
+              "mot": "Alexandra92",
+              "raison": "11 caractères : bien trop long"
+            },
+            {
+              "mot": "Léa",
+              "raison": "é n'est pas un \\w"
+            },
+            {
+              "mot": "Inès",
+              "raison": "è n'est pas un \\w"
+            },
+            {
+              "mot": "max-99",
+              "raison": "Le tiret n'est pas un \\w"
+            },
+            {
+              "mot": "Jean Luc",
+              "raison": "L'espace n'est pas un \\w"
+            },
+            {
+              "mot": "Alice42!",
+              "raison": "! n'est pas un \\w"
+            },
+            {
+              "mot": "@Max",
+              "raison": "@ n'est pas un \\w"
+            },
+            {
+              "mot": "max.99",
+              "raison": "Le point n'est pas un \\w"
+            },
+            {
+              "mot": "O'Neil",
+              "raison": "L'apostrophe n'est pas un \\w"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "Escadrille Delta — Ancres et frontières",
+      "niveaux": [
+        {
+          "id": "4-1",
+          "notion": "Ancre de début ^",
+          "regex": "^Re",
+          "mode": "contient",
+          "cours": [
+            "^ signifie « tout au début du texte ».",
+            "^Re : le texte doit COMMENCER par « Re »."
+          ],
+          "exemple": {
+            "mot": "Regex",
+            "explication": "Le texte démarre bien par R puis e."
+          },
+          "cibles": [
+            "Retour",
+            "Regex",
+            "Recette",
+            "Renard",
+            "Rennes",
+            "Redémarrer",
+            "Requin",
+            "Remise",
+            "Revoir",
+            "Respirer",
+            "Relais",
+            "Rentrée"
+          ],
+          "pieges": [
+            {
+              "mot": "retour",
+              "raison": "r minuscule : la casse compte"
+            },
+            {
+              "mot": "Rue de Re",
+              "raison": "« Re » est à la fin, pas au début"
+            },
+            {
+              "mot": "Réseau",
+              "raison": "é n'est pas e"
+            },
+            {
+              "mot": "Rien",
+              "raison": "R suivi de i, pas de e"
+            },
+            {
+              "mot": "Rouge",
+              "raison": "R suivi de o, pas de e"
+            },
+            {
+              "mot": "Le Retour",
+              "raison": "« Re » est là, mais pas au début"
+            },
+            {
+              "mot": "Au Revoir",
+              "raison": "« Re » arrive en 2e mot"
+            },
+            {
+              "mot": "Pré-Requis",
+              "raison": "« Re » est au milieu"
+            },
+            {
+              "mot": "Chef Renard",
+              "raison": "Un autre mot passe avant"
+            },
+            {
+              "mot": "#Remise",
+              "raison": "Le # est avant « Re »"
+            },
+            {
+              "mot": "(Relais)",
+              "raison": "La parenthèse est avant « Re »"
+            },
+            {
+              "mot": "3 Requins",
+              "raison": "Le 3 est avant « Re »"
+            }
+          ]
+        },
+        {
+          "id": "4-2",
+          "notion": "Ancre de fin $",
+          "regex": "\\.pdf$",
+          "mode": "contient",
+          "cours": [
+            "$ signifie « tout à la fin du texte ».",
+            "\\.pdf$ : le nom doit FINIR par « .pdf »."
+          ],
+          "exemple": {
+            "mot": "facture.pdf",
+            "explication": "« .pdf » est bien la toute fin."
+          },
+          "cibles": [
+            "cours.pdf",
+            "facture.pdf",
+            "CV_2026.pdf",
+            "plan.v2.pdf",
+            "a.pdf",
+            "notes.pdf",
+            "rapport.pdf",
+            "menu.pdf",
+            "billet.pdf",
+            "regex.pdf",
+            "devis-03.pdf",
+            "photo.png.pdf"
+          ],
+          "pieges": [
+            {
+              "mot": "CV.pdf.exe",
+              "raison": "« .pdf » n'est pas à la fin : piège !"
+            },
+            {
+              "mot": "menu.pdf.zip",
+              "raison": "Le nom finit par .zip"
+            },
+            {
+              "mot": "facture.pdfx",
+              "raison": "Un x suit « .pdf »"
+            },
+            {
+              "mot": "devis.pdf1",
+              "raison": "Un 1 suit « .pdf »"
+            },
+            {
+              "mot": "notes.pdf~",
+              "raison": "Un ~ suit « .pdf »"
+            },
+            {
+              "mot": "cours.PDF",
+              "raison": "PDF majuscule : la casse compte"
+            },
+            {
+              "mot": "courspdf",
+              "raison": "Il manque le point"
+            },
+            {
+              "mot": "cours_pdf",
+              "raison": "_ au lieu du point"
+            },
+            {
+              "mot": "cours.pd",
+              "raison": "Il manque le f final"
+            },
+            {
+              "mot": "pdf.notes",
+              "raison": "« pdf » est au début, pas à la fin"
+            },
+            {
+              "mot": "cours.docx",
+              "raison": "Mauvaise extension : .docx"
+            },
+            {
+              "mot": "cours.p-d-f",
+              "raison": "Tirets entre les lettres"
+            }
+          ]
+        },
+        {
+          "id": "4-3",
+          "notion": "Encadrer avec ^…$",
+          "regex": "^0[67]\\d{8}$",
+          "mode": "contient",
+          "cours": [
+            "^ ET $ ensemble : rien ne doit dépasser, ni avant ni après.",
+            "^0[67]\\d{8}$ : un numéro de mobile, et seulement lui."
+          ],
+          "exemple": {
+            "mot": "0612345678",
+            "explication": "0, 6, puis 8 chiffres : rien d'autre."
+          },
+          "cibles": [
+            "0612345678",
+            "0798765432",
+            "0601020304",
+            "0611223344",
+            "0700000000",
+            "0699887766",
+            "0755512345",
+            "0634567890",
+            "0767890123",
+            "0645454545",
+            "0788776655",
+            "0620406080"
+          ],
+          "pieges": [
+            {
+              "mot": "Tel 0612345678",
+              "raison": "Du texte avant le numéro"
+            },
+            {
+              "mot": "0612345678!",
+              "raison": "Un caractère après le numéro"
+            },
+            {
+              "mot": "0512345678",
+              "raison": "05 n'est pas un mobile : 06 ou 07"
+            },
+            {
+              "mot": "6123456789",
+              "raison": "Il manque le 0 du début"
+            },
+            {
+              "mot": "+33612345678",
+              "raison": "Format international : +33"
+            },
+            {
+              "mot": "061234567",
+              "raison": "9 chiffres : il en faut 10"
+            },
+            {
+              "mot": "06123456789",
+              "raison": "11 chiffres : un de trop"
+            },
+            {
+              "mot": "06 12 34 56 78",
+              "raison": "Les espaces ne sont pas des chiffres"
+            },
+            {
+              "mot": "06.12.34.56.78",
+              "raison": "Les points ne sont pas des chiffres"
+            },
+            {
+              "mot": "06-12-34-56-78",
+              "raison": "Les tirets ne sont pas des chiffres"
+            },
+            {
+              "mot": "O612345678",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "06123456ab",
+              "raison": "Des lettres à la fin"
+            }
+          ]
+        },
+        {
+          "id": "4-4",
+          "notion": "Frontière de mot \\b",
+          "regex": "\\bchat\\b",
+          "mode": "contient",
+          "cours": [
+            "\\b marque le bord d'un mot : début ou fin de mot.",
+            "\\bchat\\b trouve « chat » seul, pas dans « chaton »."
+          ],
+          "exemple": {
+            "mot": "un chat noir",
+            "explication": "Espaces de chaque côté : « chat » est isolé."
+          },
+          "cibles": [
+            "chat",
+            "le chat",
+            "un chat noir",
+            "mon chat!",
+            "chat-tigre",
+            "(chat)",
+            "chat, chien",
+            "le chat dort",
+            "#chat",
+            "chat.com",
+            "ce chat-là",
+            "« chat »"
+          ],
+          "pieges": [
+            {
+              "mot": "chaton",
+              "raison": "« chat » continue : pas de frontière"
+            },
+            {
+              "mot": "un chaton",
+              "raison": "Le mot continue après « chat »"
+            },
+            {
+              "mot": "chatte",
+              "raison": "« chat » est suivi de lettres"
+            },
+            {
+              "mot": "chats",
+              "raison": "Le s colle à « chat »"
+            },
+            {
+              "mot": "les chats",
+              "raison": "Pluriel : le s colle au mot"
+            },
+            {
+              "mot": "achat",
+              "raison": "Une lettre avant « chat »"
+            },
+            {
+              "mot": "rachat",
+              "raison": "Des lettres avant « chat »"
+            },
+            {
+              "mot": "chatbot",
+              "raison": "« chat » est le début d'un mot"
+            },
+            {
+              "mot": "chat_bot",
+              "raison": "_ fait partie du mot : pas de bord"
+            },
+            {
+              "mot": "chat2",
+              "raison": "Un chiffre colle au mot"
+            },
+            {
+              "mot": "Le Chat",
+              "raison": "C majuscule : la casse compte"
+            },
+            {
+              "mot": "tchat",
+              "raison": "Une lettre colle devant « chat »"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "nom": "Escadrille Echo — Choix, groupes et regards",
+      "niveaux": [
+        {
+          "id": "5-1",
+          "notion": "Alternance |",
+          "regex": "janv|févr|mars|avr|mai|juin|juil|août|sept|oct|nov|déc",
+          "mode": "entier",
+          "cours": [
+            "| veut dire « ou » : chat|chien accepte l'un OU l'autre.",
+            "Ici, l'une des 12 abréviations exactes des mois."
+          ],
+          "exemple": {
+            "mot": "août",
+            "explication": "« août » est l'un des choix de la liste."
+          },
+          "cibles": [
+            "janv",
+            "févr",
+            "mars",
+            "avr",
+            "mai",
+            "juin",
+            "juil",
+            "août",
+            "sept",
+            "oct",
+            "nov",
+            "déc"
+          ],
+          "pieges": [
+            {
+              "mot": "Janv",
+              "raison": "J majuscule : la casse compte"
+            },
+            {
+              "mot": "janvier",
+              "raison": "Mot complet : trop long"
+            },
+            {
+              "mot": "jan",
+              "raison": "Abréviation trop courte"
+            },
+            {
+              "mot": "mar",
+              "raison": "Il manque le s de « mars »"
+            },
+            {
+              "mot": "sep",
+              "raison": "Il manque le t de « sept »"
+            },
+            {
+              "mot": "fevr",
+              "raison": "Il manque l'accent : é"
+            },
+            {
+              "mot": "aout",
+              "raison": "Il manque l'accent : û"
+            },
+            {
+              "mot": "dec",
+              "raison": "Il manque l'accent : é"
+            },
+            {
+              "mot": "févr.",
+              "raison": "Le point final est en trop"
+            },
+            {
+              "mot": "oct.",
+              "raison": "Le point final est en trop"
+            },
+            {
+              "mot": "jul",
+              "raison": "Abréviation anglaise"
+            },
+            {
+              "mot": "may",
+              "raison": "Mot anglais, pas « mai »"
+            }
+          ]
+        },
+        {
+          "id": "5-2",
+          "notion": "Groupes ( )",
+          "regex": "(ha|hi)+",
+          "mode": "entier",
+          "cours": [
+            "( ) regroupe plusieurs caractères en un seul bloc.",
+            "(ha|hi)+ : le bloc « ha » ou « hi », répété 1 fois ou plus."
+          ],
+          "exemple": {
+            "mot": "hahihi",
+            "explication": "ha + hi + hi : trois blocs entiers."
+          },
+          "cibles": [
+            "ha",
+            "hi",
+            "haha",
+            "hihi",
+            "hahi",
+            "hiha",
+            "hahaha",
+            "hihihi",
+            "hahihi",
+            "hihaha",
+            "hahahihi",
+            "hihahiha"
+          ],
+          "pieges": [
+            {
+              "mot": "hah",
+              "raison": "Le h final est un bloc incomplet"
+            },
+            {
+              "mot": "hihih",
+              "raison": "Le dernier h est seul"
+            },
+            {
+              "mot": "h",
+              "raison": "Un h seul n'est pas un bloc"
+            },
+            {
+              "mot": "aha",
+              "raison": "Commence par a : bloc coupé"
+            },
+            {
+              "mot": "haaha",
+              "raison": "« haa » n'est pas un bloc"
+            },
+            {
+              "mot": "hhaa",
+              "raison": "Lettres dans le désordre"
+            },
+            {
+              "mot": "hoho",
+              "raison": "o n'est ni a ni i"
+            },
+            {
+              "mot": "hehe",
+              "raison": "e n'est ni a ni i"
+            },
+            {
+              "mot": "Haha",
+              "raison": "H majuscule : la casse compte"
+            },
+            {
+              "mot": "ha ha",
+              "raison": "L'espace casse la répétition"
+            },
+            {
+              "mot": "ha-ha",
+              "raison": "Le tiret casse la répétition"
+            },
+            {
+              "mot": "hahaha!",
+              "raison": "Le ! final est en trop"
+            }
+          ]
+        },
+        {
+          "id": "5-3",
+          "notion": "Lookahead (?=…)",
+          "regex": "(?=.*\\d)[A-Za-z\\d]{6,12}",
+          "mode": "entier",
+          "cours": [
+            "(?=…) vérifie qu'une condition est vraie, sans rien consommer.",
+            "(?=.*\\d) : « il y a au moins un chiffre quelque part »."
+          ],
+          "exemple": {
+            "mot": "Paris75",
+            "explication": "Contient un chiffre, 7 caractères permis."
+          },
+          "cibles": [
+            "azerty1",
+            "Soleil2026",
+            "7samourai",
+            "motdepasse9",
+            "Paris75",
+            "abc123",
+            "Z1Z2Z3",
+            "12345678",
+            "Regex42",
+            "b4nane",
+            "Chat9noir",
+            "Lune2Mars"
+          ],
+          "pieges": [
+            {
+              "mot": "azerty",
+              "raison": "Aucun chiffre : le lookahead échoue"
+            },
+            {
+              "mot": "Soleil",
+              "raison": "Aucun chiffre"
+            },
+            {
+              "mot": "MOTDEPASSE",
+              "raison": "Que des lettres, aucun chiffre"
+            },
+            {
+              "mot": "abc1",
+              "raison": "4 caractères : minimum 6"
+            },
+            {
+              "mot": "Aa1",
+              "raison": "3 caractères : bien trop court"
+            },
+            {
+              "mot": "motdepasse12345",
+              "raison": "15 caractères : maximum 12"
+            },
+            {
+              "mot": "Paris 75",
+              "raison": "L'espace n'est pas autorisé"
+            },
+            {
+              "mot": "azerty1!",
+              "raison": "! n'est pas autorisé"
+            },
+            {
+              "mot": "soleil_7",
+              "raison": "_ n'est pas dans [A-Za-z\\d]"
+            },
+            {
+              "mot": "chat-9",
+              "raison": "Le tiret n'est pas autorisé"
+            },
+            {
+              "mot": "Mötley1",
+              "raison": "ö n'est pas dans A-Z ni a-z"
+            },
+            {
+              "mot": "€uro2026",
+              "raison": "€ n'est pas autorisé"
+            }
+          ]
+        },
+        {
+          "id": "5-4",
+          "notion": "Lookahead négatif (?!…)",
+          "regex": "(?!75)\\d{5}",
+          "mode": "entier",
+          "cours": [
+            "(?!…) vérifie que quelque chose n'arrive PAS ici.",
+            "(?!75)\\d{5} : un code postal qui ne commence pas par 75."
+          ],
+          "exemple": {
+            "mot": "33000",
+            "explication": "Ne commence pas par 75, et a 5 chiffres."
+          },
+          "cibles": [
+            "33000",
+            "13001",
+            "69002",
+            "33120",
+            "31000",
+            "44000",
+            "06000",
+            "59000",
+            "67000",
+            "35000",
+            "97400",
+            "07500"
+          ],
+          "pieges": [
+            {
+              "mot": "75001",
+              "raison": "Commence par 75 : refusé"
+            },
+            {
+              "mot": "75015",
+              "raison": "Commence par 75 : Paris exclu"
+            },
+            {
+              "mot": "75116",
+              "raison": "Commence par 75 : refusé"
+            },
+            {
+              "mot": "7500",
+              "raison": "Commence par 75 et trop court"
+            },
+            {
+              "mot": "3300",
+              "raison": "4 chiffres : il en faut 5"
+            },
+            {
+              "mot": "330000",
+              "raison": "6 chiffres : un de trop"
+            },
+            {
+              "mot": "33 000",
+              "raison": "L'espace n'est pas un chiffre"
+            },
+            {
+              "mot": "69-002",
+              "raison": "Le tiret n'est pas un chiffre"
+            },
+            {
+              "mot": "2A004",
+              "raison": "A n'est pas un chiffre (Corse)"
+            },
+            {
+              "mot": "33OOO",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "F-33000",
+              "raison": "Le préfixe F- est en trop"
+            },
+            {
+              "mot": "CP 33000",
+              "raison": "Du texte avant le code"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "nom": "Escadrille Foxtrot — Les experts",
+      "niveaux": [
+        {
+          "id": "6-1",
+          "notion": "Non-espace \\S",
+          "regex": "\\S+@\\S+",
+          "mode": "entier",
+          "cours": [
+            "\\S (majuscule) = tout caractère SAUF un espace.",
+            "\\S+@\\S+ : une adresse mail sans aucun espace."
+          ],
+          "exemple": {
+            "mot": "ana@mail.fr",
+            "explication": "« ana », @, « mail.fr » : aucun espace."
+          },
+          "cibles": [
+            "ana@mail.fr",
+            "bob@site.com",
+            "zoe@lycee.fr",
+            "max@free.fr",
+            "lea_2@ac.fr",
+            "x@y",
+            "prof@ecole.fr",
+            "info@regex.io",
+            "a.b@c.d",
+            "chef@cuisine.fr",
+            "nina@gmail.com",
+            "tom@3w.fr"
+          ],
+          "pieges": [
+            {
+              "mot": "ana @mail.fr",
+              "raison": "Espace avant le @"
+            },
+            {
+              "mot": "ana@ mail.fr",
+              "raison": "Espace après le @"
+            },
+            {
+              "mot": "ana@mail .fr",
+              "raison": "Un espace coupe la fin"
+            },
+            {
+              "mot": "@mail.fr",
+              "raison": "Rien avant le @ : \\S+ veut au moins 1"
+            },
+            {
+              "mot": "ana@",
+              "raison": "Rien après le @"
+            },
+            {
+              "mot": "ana.mail.fr",
+              "raison": "Il n'y a pas de @"
+            },
+            {
+              "mot": "ana mail.fr",
+              "raison": "Un espace au lieu du @"
+            },
+            {
+              "mot": "ana#mail.fr",
+              "raison": "# au lieu de @"
+            },
+            {
+              "mot": "ana(at)mail.fr",
+              "raison": "(at) n'est pas le signe @"
+            },
+            {
+              "mot": "a na@mail.fr",
+              "raison": "Un espace coupe le nom"
+            },
+            {
+              "mot": "ana@ma il.fr",
+              "raison": "Un espace coupe le domaine"
+            },
+            {
+              "mot": "ana@mail. fr",
+              "raison": "Espace après le point"
+            }
+          ]
+        },
+        {
+          "id": "6-2",
+          "notion": "Non-chiffre \\D",
+          "regex": "\\d\\d\\D\\d\\d\\D\\d{4}",
+          "mode": "entier",
+          "cours": [
+            "\\D (majuscule) = tout caractère SAUF un chiffre.",
+            "Ici une date : le séparateur peut être /, -, . ou espace."
+          ],
+          "exemple": {
+            "mot": "14/07/1789",
+            "explication": "/ n'est pas un chiffre : accepté par \\D."
+          },
+          "cibles": [
+            "14/07/1789",
+            "01-01-2000",
+            "25.12.2025",
+            "08 05 1945",
+            "11/11/1918",
+            "31/12/1999",
+            "29-02-2024",
+            "06.06.1944",
+            "21/06/2026",
+            "18/06/1940",
+            "10_05_1981",
+            "02/09/2026"
+          ],
+          "pieges": [
+            {
+              "mot": "14071789",
+              "raison": "Aucun séparateur entre les nombres"
+            },
+            {
+              "mot": "1/07/1789",
+              "raison": "Jour à un seul chiffre"
+            },
+            {
+              "mot": "14/7/1789",
+              "raison": "Mois à un seul chiffre"
+            },
+            {
+              "mot": "14/07/89",
+              "raison": "Année à deux chiffres"
+            },
+            {
+              "mot": "14//07/1789",
+              "raison": "Deux séparateurs : \\D n'en prend qu'un"
+            },
+            {
+              "mot": "14507/1789",
+              "raison": "5 est un chiffre, pas un séparateur"
+            },
+            {
+              "mot": "14/07/17890",
+              "raison": "Année à cinq chiffres"
+            },
+            {
+              "mot": "14/O7/1789",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "14/07/1789.",
+              "raison": "Le point final est en trop"
+            },
+            {
+              "mot": "le 14/07/1789",
+              "raison": "Du texte avant la date"
+            },
+            {
+              "mot": "14 / 07 / 1789",
+              "raison": "Espaces autour : deux \\D de suite"
+            },
+            {
+              "mot": "2024-12-24",
+              "raison": "L'année est en premier"
+            }
+          ]
+        },
+        {
+          "id": "6-3",
+          "notion": "Au moins n {n,}",
+          "regex": "go{2,}al",
+          "mode": "entier",
+          "cours": [
+            "{n,} répète au moins n fois, sans limite au-dessus.",
+            "go{2,}al : un but crié avec au moins deux o."
+          ],
+          "exemple": {
+            "mot": "goooal",
+            "explication": "Trois o : c'est au moins deux."
+          },
+          "cibles": [
+            "gooal",
+            "goooal",
+            "gooooal",
+            "goooooal",
+            "gooooooal",
+            "goooooooal",
+            "gooooooooal",
+            "goooooooooal",
+            "gooooooooooal",
+            "goooooooooooal",
+            "gooooooooooooal",
+            "goooooooooooooal"
+          ],
+          "pieges": [
+            {
+              "mot": "goal",
+              "raison": "Un seul o : il en faut au moins 2"
+            },
+            {
+              "mot": "gal",
+              "raison": "Aucun o"
+            },
+            {
+              "mot": "Gooal",
+              "raison": "G majuscule : la casse compte"
+            },
+            {
+              "mot": "goo al",
+              "raison": "L'espace est en trop"
+            },
+            {
+              "mot": "gooaal",
+              "raison": "Deux a : le a n'est pas répété"
+            },
+            {
+              "mot": "goooa1",
+              "raison": "1 au lieu du l final"
+            },
+            {
+              "mot": "goooal!",
+              "raison": "Le ! final est en trop"
+            },
+            {
+              "mot": "gooall",
+              "raison": "Deux l à la fin"
+            },
+            {
+              "mot": "gooo",
+              "raison": "Il manque « al »"
+            },
+            {
+              "mot": "oooal",
+              "raison": "Il manque le g"
+            },
+            {
+              "mot": "gooo0al",
+              "raison": "0 est un chiffre, pas la lettre o"
+            },
+            {
+              "mot": "goaal",
+              "raison": "Un seul o, puis deux a"
+            }
+          ]
+        },
+        {
+          "id": "6-4",
+          "notion": "Drapeau i",
+          "regex": "salut",
+          "flags": "i",
+          "mode": "entier",
+          "cours": [
+            "Le drapeau i rend la regex insensible à la casse.",
+            "/salut/i accepte SALUT, Salut, sAlUt… mais rien d'autre."
+          ],
+          "exemple": {
+            "mot": "SaLuT",
+            "explication": "Avec i, majuscules et minuscules se valent."
+          },
+          "cibles": [
+            "salut",
+            "Salut",
+            "SALUT",
+            "sAlUt",
+            "SaLuT",
+            "saluT",
+            "sALUT",
+            "SALut",
+            "salUT",
+            "sAluT",
+            "SAlut",
+            "saLut"
+          ],
+          "pieges": [
+            {
+              "mot": "saluts",
+              "raison": "Le s final est en trop"
+            },
+            {
+              "mot": "salu",
+              "raison": "Il manque le t"
+            },
+            {
+              "mot": "slaut",
+              "raison": "Lettres dans le désordre"
+            },
+            {
+              "mot": "salüt",
+              "raison": "ü n'est pas u, même avec i"
+            },
+            {
+              "mot": "SALÜT",
+              "raison": "Ü n'est pas U, même avec i"
+            },
+            {
+              "mot": "sa lut",
+              "raison": "L'espace est en trop"
+            },
+            {
+              "mot": "salut!",
+              "raison": "Le ! final est en trop"
+            },
+            {
+              "mot": "5alut",
+              "raison": "5 n'est pas la lettre s"
+            },
+            {
+              "mot": "salvt",
+              "raison": "v au lieu de u"
+            },
+            {
+              "mot": "Salut.",
+              "raison": "Le point final est en trop"
+            },
+            {
+              "mot": "csalut",
+              "raison": "Un c de trop au début"
+            },
+            {
+              "mot": "SALUE",
+              "raison": "E au lieu de T"
+            }
+          ]
+        },
+        {
+          "id": "6-5",
+          "notion": "Référence \\1",
+          "regex": "(\\w)\\1",
+          "mode": "contient",
+          "cours": [
+            "\\1 répète exactement ce que le groupe 1 a capturé.",
+            "(\\w)\\1 : le même caractère deux fois de suite."
+          ],
+          "exemple": {
+            "mot": "pomme",
+            "explication": "(\\w) capture m, \\1 exige un second m."
+          },
+          "cibles": [
+            "balle",
+            "pomme",
+            "terre",
+            "jazz",
+            "zoo",
+            "succès",
+            "bassin",
+            "addition",
+            "coffre",
+            "2000",
+            "jeep",
+            "Hello"
+          ],
+          "pieges": [
+            {
+              "mot": "bal",
+              "raison": "Aucun caractère doublé"
+            },
+            {
+              "mot": "pome",
+              "raison": "Un seul m"
+            },
+            {
+              "mot": "ter re",
+              "raison": "L'espace sépare les deux r"
+            },
+            {
+              "mot": "Aa",
+              "raison": "A et a : la casse compte"
+            },
+            {
+              "mot": "abab",
+              "raison": "Répétés, mais pas côte à côte"
+            },
+            {
+              "mot": "radar",
+              "raison": "Aucune lettre collée à sa jumelle"
+            },
+            {
+              "mot": "1 1",
+              "raison": "L'espace sépare les deux 1"
+            },
+            {
+              "mot": "éé",
+              "raison": "é n'est pas un \\w"
+            },
+            {
+              "mot": "kiwi",
+              "raison": "Les deux i ne se touchent pas"
+            },
+            {
+              "mot": "o-o",
+              "raison": "Le tiret sépare les deux o"
+            },
+            {
+              "mot": "chat",
+              "raison": "Aucun caractère doublé"
+            },
+            {
+              "mot": "maman",
+              "raison": "m et a alternent, sans doublon"
+            }
+          ]
+        },
+        {
+          "id": "6-6",
+          "notion": "Regard arrière (?<=…)",
+          "regex": "(?<=€)\\d+",
+          "mode": "contient",
+          "cours": [
+            "(?<=…) vérifie ce qui se trouve juste AVANT, sans le prendre.",
+            "(?<=€)\\d+ : des chiffres collés juste après un €."
+          ],
+          "exemple": {
+            "mot": "prix €45",
+            "explication": "45 est précédé de € : trouvé."
+          },
+          "cibles": [
+            "€20",
+            "€5",
+            "€199",
+            "prix €45",
+            "€0",
+            "total €12",
+            "€1000",
+            "€7 TTC",
+            "dès €3",
+            "€99,90",
+            "x€8",
+            "€42!"
+          ],
+          "pieges": [
+            {
+              "mot": "20€",
+              "raison": "Le € est après le nombre"
+            },
+            {
+              "mot": "€ 20",
+              "raison": "Un espace sépare € et 20"
+            },
+            {
+              "mot": "$20",
+              "raison": "$ au lieu de €"
+            },
+            {
+              "mot": "20 €",
+              "raison": "Le € est à la fin"
+            },
+            {
+              "mot": "€",
+              "raison": "Aucun chiffre après le €"
+            },
+            {
+              "mot": "€vingt",
+              "raison": "Des lettres, pas des chiffres"
+            },
+            {
+              "mot": "EUR20",
+              "raison": "EUR n'est pas le symbole €"
+            },
+            {
+              "mot": "£20",
+              "raison": "£ au lieu de €"
+            },
+            {
+              "mot": "€-5",
+              "raison": "Le tiret sépare € et 5"
+            },
+            {
+              "mot": "20",
+              "raison": "Aucun € devant"
+            },
+            {
+              "mot": "€O",
+              "raison": "O est une lettre, pas un zéro"
+            },
+            {
+              "mot": "e20",
+              "raison": "e n'est pas le symbole €"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,28 +1,21 @@
 // =============================================================
 //  MACH-REGEX : Jet Interceptor
-//  Boucle de jeu 3D, cibles, missiles, chrono de grâce et vies.
+//  La regex est affichée dans le cockpit. Les drones portent des mots :
+//  on tire sur ceux qui correspondent, on épargne les autres.
+//  Boucle 3D, visée (souris / tactile / clavier), chrono de grâce et vies.
 // =============================================================
 import * as THREE from 'three';
-import { compile, evaluate, classify, formatValue, isMatch } from './regex-engine.js';
 import { glowTexture, reticleTexture, labelTexture } from './textures.js';
 import { sfx } from './audio.js';
+import { levelMatcher, buildWave, pace } from './missions.js';
 import {
-  $, esc, highlightHTML, patternHTML, MODE_LABEL, RegexInput,
-  openModal, closeModal, toast, flash, courseCardHTML, memoHTML,
+  $, esc, highlightHTML, patternHTML, MODE_INFO, regexHTML,
+  openModal, closeModal, modalOpen, toast, flash, courseCardHTML, memoHTML,
 } from './ui.js';
 
-const STATUS_TXT = { locked: 'VERROUILLÉ', wrong: 'CAPTURE FAUSSE', iff: '⚠ IFF ALLIÉ', none: 'NON VERROUILLÉ', clear: 'NON VERROUILLÉ' };
-const STATUS_HEX = { locked: 0x2bff88, wrong: 0xff3860, iff: 0xff3860, none: 0xffb000, clear: 0xffb000 };
-const KEYS = ['.', '*', '+', '?', '\\d', '\\w', '\\s', '\\S', '\\b', '^', '$', '[ ]', '( )', '|', '{ }', '\\', '-', '#', ':'];
-
-const shuffle = (a) => {
-  const r = a.slice();
-  for (let i = r.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [r[i], r[j]] = [r[j], r[i]];
-  }
-  return r;
-};
+// Couloirs d'arrivée à l'écran (coordonnées normalisées -1..1), répartis pour éviter les panneaux du HUD
+const LANES = [[-0.5, 0.3], [-0.12, 0.36], [0.2, 0.26], [-0.32, 0.08], [0.02, 0.16], [-0.62, 0.14], [0.28, 0.04], [-0.18, 0.0]];
+const STATE_HEX = { neutral: 0xffb000, aim: 0x00f0ff, locked: 0xff2bd6 };
 
 export class JetGame {
   constructor(app) {
@@ -38,6 +31,10 @@ export class JetGame {
     this.t = 0;
     this.shake = 0;
     this.nextId = 1;
+    this.pointer = null;   // position souris en pixels (null = hors du canvas)
+    this.hover = null;     // drone sous la souris
+    this.sel = null;       // drone choisi au clavier
+    this.kbd = false;      // le joueur utilise le clavier
     this.buildWorld();
     this.buildParticles();
     this.bindHud();
@@ -331,54 +328,79 @@ export class JetGame {
   }
 
   // ---------------------------------------------------------------
-  //  HUD
+  //  HUD & COMMANDES
   // ---------------------------------------------------------------
   bindHud() {
-    this.rx = new RegexInput($('#rx'), $('#rx-hl'), (v) => this.onRegexChange(v));
-    $('#rx').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); this.fire(); }
-      else if (e.key.length === 1) sfx.key();
+    const hudBtn = (sel, fn) => $(sel).addEventListener('click', (e) => { e.currentTarget.blur(); fn(); });
+    hudBtn('#btn-course', () => this.requestCourse());
+    hudBtn('#btn-pause', () => this.pause());
+
+    // Radar : cliquer une ligne = tirer sur ce drone (pratique au doigt)
+    $('#radar').addEventListener('click', (e) => {
+      const li = e.target.closest('[data-drone]');
+      if (!li) return;
+      li.blur();
+      const d = this.drones.find((x) => x.id === +li.dataset.drone);
+      if (d) this.fire(d);
     });
-    $('#btn-fire').addEventListener('click', () => this.fire());
-    $('#btn-course').addEventListener('click', () => this.requestCourse());
-    $('#btn-pause').addEventListener('click', () => this.pause());
-    const kp = $('#keypad');
-    for (const k of KEYS) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'key';
-      b.textContent = k;
-      b.addEventListener('pointerdown', (e) => e.preventDefault()); // garde le focus sur l'input
-      b.addEventListener('click', () => {
-        const ins = { '[ ]': '[]', '( )': '()', '{ }': '{}' }[k] ?? k;
-        this.rx.insert(ins);
-        if (ins.length === 2 && '[({'.includes(ins[0])) {
-          const el = $('#rx');
-          el.setSelectionRange(el.selectionStart - 1, el.selectionStart - 1);
-        }
-      });
-      kp.appendChild(b);
-    }
+    $('#radar').addEventListener('pointerover', (e) => {
+      const li = e.target.closest('[data-drone]');
+      this.radarHover = li ? this.drones.find((x) => x.id === +li.dataset.drone) : null;
+    });
+    $('#radar').addEventListener('pointerleave', () => { this.radarHover = null; });
+
+    // Souris / tactile sur la scène 3D
+    this.onPointerMove = (e) => {
+      this.pointer = { x: e.clientX, y: e.clientY };
+      if (e.pointerType === 'mouse') this.kbd = false;
+    };
+    this.onPointerLeave = () => { this.pointer = null; };
+    this.onPointerDown = (e) => {
+      if (this.state !== 'playing') return;
+      const slop = e.pointerType === 'touch' ? 34 : 10;
+      const d = this.pick(e.clientX, e.clientY, slop);
+      if (d) this.fire(d);
+      else if (e.pointerType !== 'touch') this.dryFire();
+    };
+
+    // Clavier : ←/→ pour choisir, Espace/Entrée pour tirer, Échap pour la pause
     this.onKey = (e) => {
       if (this.app.active !== this) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         if (this.state === 'playing') this.pause();
         else if (this.state === 'paused' || this.state === 'course') this.resume();
+        return;
+      }
+      if (this.state !== 'playing' || modalOpen()) return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.kbd = true;
+        this.cycle(e.key === 'ArrowRight' ? 1 : -1);
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        this.kbd = true;
+        if (this.sel && this.alive(this.sel)) this.fire(this.sel);
+        else this.cycle(0);
       }
     };
     window.addEventListener('keydown', this.onKey);
-    if (matchMedia('(max-width: 760px)').matches) $('#log').classList.add('mobile');
   }
 
-  log(msg, kind = 'info') {
+  log(html, kind = 'info', ms = 3300) {
     const el = document.createElement('div');
     el.className = 'log-item ' + kind;
-    el.textContent = msg;
+    el.style.animationDuration = `${ms}ms`;
+    el.innerHTML = html;
     const box = $('#log');
     box.prepend(el);
     while (box.children.length > 4) box.lastChild.remove();
-    setTimeout(() => el.remove(), 3300);
+    setTimeout(() => el.remove(), ms);
+  }
+
+  wordHTML(mot, withHit = false) {
+    const spans = withHit ? this.matcher.spans(mot) : [];
+    return `<span class="w">${highlightHTML(mot, spans)}</span>`;
   }
 
   renderLives() {
@@ -389,18 +411,26 @@ export class JetGame {
 
   renderHudStatic() {
     const lv = this.level;
+    const mi = MODE_INFO[lv.mode];
     $('#hud-squad').textContent = this.squad.name.split('—')[0].trim();
     $('#hud-level').textContent = `Niveau ${this.levelIdx + 1}/${this.squad.levels.length}`;
     $('#obj-notion').textContent = lv.notion;
-    $('#obj-title').textContent = lv.title;
-    $('#obj-text').textContent = lv.objective;
-    $('#obj-mode').textContent = MODE_LABEL[lv.mode];
-    const fl = $('#obj-flags');
+    $('#obj-text').innerHTML = `Tire sur les mots qui <b>correspondent</b> à la regex, épargne les autres. ${esc(mi.help)}`;
+    $('#ck-regex').innerHTML = regexHTML(lv.regex, lv.flags);
+    $('#ck-mode').textContent = mi.label;
+    $('#ck-mode').title = mi.help;
+    $('#ck-mode').className = `badge mode-${lv.mode}`;
+    const fl = $('#ck-flags');
     fl.hidden = !lv.flags;
-    fl.textContent = lv.flags ? `Drapeau ${lv.flags} : insensible à la casse` : '';
-    $('#rx-flags').textContent = lv.flags;
+    fl.textContent = lv.flags.includes('i') ? 'i : casse ignorée' : lv.flags;
     this.renderLives();
     this.renderScore();
+    this.renderRadarHead();
+  }
+
+  renderRadarHead() {
+    const left = this.queue ? this.queue.length + this.drones.length : 0;
+    $('#radar-count').textContent = left ? `${left} restant${left > 1 ? 's' : ''}` : '';
   }
 
   renderClock() {
@@ -415,7 +445,7 @@ export class JetGame {
       g.querySelector('.hud-value').textContent = `LIBRE ${left}s`;
       $('#btn-course').textContent = 'COURS';
     } else {
-      if (!g.classList.contains('pressure')) this.log('Mode pression : le cours coûte désormais 1 ♥', 'bad');
+      if (!g.classList.contains('pressure')) this.log('Le cours coûte désormais 1 ♥', 'bad');
       g.classList.add('pressure');
       g.querySelector('.hud-value').textContent = '−1 ♥';
       $('#btn-course').textContent = 'COURS −1♥';
@@ -436,23 +466,20 @@ export class JetGame {
   startLevel() {
     this.clearField();
     const id = this.squad.levels[this.levelIdx];
-    this.level = { id, ...this.app.data.levels[id] };
-    const lv = this.level;
-    const sol = compile(lv.solution, lv.flags);
-    this.targets = shuffle(lv.targets).map((text) => {
-      const s = evaluate(sol, text, lv.mode).value;
-      return { text, sol: s, hostile: isMatch(s, lv.mode) };
-    });
-    this.queue = this.targets.slice();
-    this.stats = { kills: 0, impacts: 0, iff: 0, wrong: 0, hostiles: this.targets.filter((t) => t.hostile).length, courseCost: 0 };
+    this.level = this.app.data.levels[id];
+    this.matcher = levelMatcher(this.level);
+    this.queue = buildWave(this.level);
+    this.waveSize = this.queue.length;
+    const nT = this.queue.filter((t) => t.hostile).length;
+    this.stats = { hits: 0, targets: nT, spared: 0, traps: this.waveSize - nT, courseCost: 0 };
+    this.errors = [];
     this.levelTime = 0;
     this.lastClock = -1;
     this.spawnTimer = 1.2;
-    this.committed = null;
-    this.live = null;
     this.levelScore0 = this.score;
-    this.rx.set('');
-    this.onRegexChange('');
+    this.sel = null;
+    this.hover = null;
+    $('#log').innerHTML = '';
     this.renderHudStatic();
     this.renderClock();
     this.state = 'intro';
@@ -462,8 +489,8 @@ export class JetGame {
   begin() {
     closeModal();
     this.state = 'playing';
+    document.activeElement?.blur?.();
     sfx.open();
-    $('#rx').focus({ preventScroll: true });
   }
 
   clearField() {
@@ -493,8 +520,7 @@ export class JetGame {
   pause() {
     if (this.state !== 'playing') return;
     this.state = 'paused';
-    const grace = this.inGrace();
-    if (grace) { this.showCourse({ paused: true }); return; }
+    if (this.inGrace()) { this.showCourse({ paused: true }); return; }
     openModal(`
       <div class="kicker">PAUSE</div>
       <h2>Vol suspendu</h2>
@@ -510,7 +536,7 @@ export class JetGame {
     closeModal();
     if (this.state === 'intro') { this.begin(); return; }
     this.state = 'playing';
-    $('#rx').focus({ preventScroll: true });
+    document.activeElement?.blur?.();
   }
 
   wireActions(el) {
@@ -522,6 +548,7 @@ export class JetGame {
       else if (a === 'course') { this.state = 'paused'; this.requestCourse(); }
       else if (a === 'quit') this.quit();
       else if (a === 'next') this.nextLevel();
+      else if (a === 'retry') { closeModal(); this.startLevel(); }
       else if (a === 'restart') this.start(this.squad);
       else if (a === 'menu') this.app.openSquadrons();
     }));
@@ -533,30 +560,31 @@ export class JetGame {
 
   showCourse({ intro = false, paused = false }) {
     const lv = this.level;
-    const game = this.app.data.games.find((g) => g.id === 'jet');
-    const all = game.squadrons.flatMap((s) => s.levels);
-    const upto = all.slice(0, all.indexOf(lv.id) + 1).map((id) => ({ id, ...this.app.data.levels[id] }));
+    const all = Object.values(this.app.data.levels).sort((a, b) => a.global - b.global);
+    const upto = all.filter((l) => l.global <= lv.global);
     const graceLeft = Math.ceil(this.cfg.graceSeconds - this.levelTime);
     const note = intro
       ? `<div class="grace-note">Après le décollage, tu as <b>${this.cfg.graceSeconds} s</b> pour revoir ce cours gratuitement (bouton COURS ou Échap). Ensuite, chaque consultation coûte <b>1 ♥</b>.</div>`
       : this.inGrace()
         ? `<div class="grace-note">Fenêtre de grâce : encore <b>${graceLeft} s</b> de consultation gratuite.</div>`
-        : `<div class="grace-note cost">Consultation payée : −1 ♥. Le chrono est arrêté pendant la lecture.</div>`;
+        : '<div class="grace-note cost">Consultation payée : −1 ♥. Le chrono est arrêté pendant la lecture.</div>';
+    const controls = intro
+      ? `<div class="controls-note"><b>Viser :</b> clique ou touche un drone (ou sa ligne dans le radar).
+         Au clavier : <kbd>←</kbd> <kbd>→</kbd> pour choisir, <kbd>Espace</kbd> pour tirer.
+         Un piège touché ou une cible manquée coûte <b>1 ♥</b>.</div>`
+      : '';
     openModal(`
-      <div class="kicker">${intro ? 'BRIEFING' : paused ? 'PAUSE · COURS' : 'COURS'} · ${esc(this.squad.name)} · NIVEAU ${this.levelIdx + 1}</div>
-      <h2>${esc(lv.title)}</h2>
+      <div class="kicker">${intro ? 'BRIEFING' : paused ? 'PAUSE · COURS' : 'COURS'} · ${esc(this.squad.name)} · NIVEAU ${this.levelIdx + 1}/${this.squad.levels.length}</div>
       <div class="tabs">
         <button class="tab active" data-tab="card">Notion du niveau</button>
-        <button class="tab" data-tab="memo">Mémo des notions (${upto.length})</button>
+        <button class="tab" data-tab="memo">Mémo (${upto.length})</button>
       </div>
-      <div data-pane="card">
-        ${courseCardHTML(lv)}
-        <p style="margin:14px 0 0"><b>Mission :</b> ${esc(lv.objective)}</p>
-      </div>
+      <div data-pane="card">${courseCardHTML(lv, this.matcher)}</div>
       <div data-pane="memo" hidden>${memoHTML(upto, lv.id)}</div>
+      ${controls}
       ${note}
       <div class="modal-actions">
-        ${intro ? '<button class="btn ghost" data-act="quit">Retour</button>' : '<button class="btn ghost" data-act="quit">Quitter la mission</button>'}
+        <button class="btn ghost" data-act="quit">${intro ? 'Retour' : 'Quitter la mission'}</button>
         <button class="btn pink" data-act="${intro ? 'begin' : 'resume'}" data-autofocus>${intro ? 'DÉCOLLAGE ▶' : 'Reprendre le vol'}</button>
       </div>`, { onMount: (el) => this.wireActions(el) });
     sfx.open();
@@ -570,109 +598,74 @@ export class JetGame {
   }
 
   // ---------------------------------------------------------------
-  //  REGEX : aperçu en direct + tir
+  //  VISÉE
   // ---------------------------------------------------------------
-  onRegexChange(src) {
-    const lv = this.level;
-    if (!lv) return;
-    const field = $('.rx-field');
-    const info = $('#rx-info');
-    const c = compile(src, lv.flags);
-    this.live = c;
-    field.classList.toggle('invalid', !c.ok && !c.empty);
-    if (!c.ok && !c.empty) info.innerHTML = `<span class="err">⚠ ${esc(c.error)}</span>`;
-    for (const d of this.drones) this.evalDrone(d);
-    this.renderInfo();
+  alive(d) { return d && !d.dead && !d.targeted; }
+
+  /** Position écran (pixels) d'un point 3D. */
+  toScreen(v) {
+    const p = v.clone().project(this.camera);
+    return { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight, front: p.z < 1 };
   }
 
-  renderInfo() {
-    const c = this.live;
-    if (!c || !c.ok) {
-      if (c?.empty) $('#rx-info').innerHTML = 'Entrée = tirer · Échap = pause · les captures s\'affichent en direct sur le radar';
-      return;
-    }
-    const counts = { locked: 0, wrong: 0, iff: 0 };
-    for (const d of this.drones) counts[d.status] = (counts[d.status] ?? 0) + 1;
-    const parts = [`<span class="ok">${counts.locked} verrouillée(s)</span>`];
-    if (counts.wrong) parts.push(`<span class="bad">${counts.wrong} capture(s) fausse(s)</span>`);
-    if (counts.iff) parts.push(`<span class="bad">${counts.iff} allié(s) visé(s) ⚠</span>`);
-    if (this.committed) parts.push(`armé : /${patternHTML(this.committed.src)}/`);
-    $('#rx-info').innerHTML = parts.join(' · ');
-  }
-
-  evalDrone(d) {
-    const lv = this.level;
-    const r = evaluate(this.live, d.target.text, lv.mode);
-    const status = this.live?.ok ? classify(r.value, d.target.sol, lv.mode) : (d.target.hostile ? 'none' : 'clear');
-    const key = status + '|' + JSON.stringify(r.spans);
-    d.value = r.value;
-    d.status = status;
-    if (key === d.renderKey) return;
-    d.renderKey = key;
-    // étiquette 3D
-    const { texture, aspect } = labelTexture(d.target.text, r.spans, status);
-    d.label.material.map?.dispose();
-    d.label.material.map = texture;
-    d.label.material.needsUpdate = true;
-    d.labelAspect = aspect;
-    const hex = STATUS_HEX[status];
-    d.core.material.emissive.setHex(hex);
-    d.wire.material.color.setHex(hex);
-    d.reticle.visible = status === 'locked' || status === 'wrong' || status === 'iff';
-    d.reticle.material.color.setHex(hex);
-    // radar HTML
-    const cls = status === 'locked' ? 'hit-ok' : 'hit-bad';
-    d.li.className = `radar-item ${status}${d.targeted ? ' targeted' : ''}`;
-    d.li.querySelector('.rt').innerHTML = highlightHTML(d.target.text, r.spans, cls);
-    const shown = this.live?.ok && isMatch(r.value, lv.mode) ? formatValue(r.value, lv.mode) : '—';
-    d.li.querySelector('.rv').innerHTML = `<span>Capture : <b>${esc(shown)}</b></span><span class="rs">${STATUS_TXT[status]}</span>`;
-  }
-
-  fire() {
-    if (this.state !== 'playing') return;
-    const c = this.live;
-    if (!c || !c.ok) {
-      sfx.error();
-      const f = $('.rx-field');
-      f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake');
-      return;
-    }
-    this.committed = c;
-    let fired = 0, iff = 0, wrong = 0;
+  /** Drone sous le point (x, y) : étiquette ou corps, avec une marge en pixels. */
+  pick(x, y, slop = 10) {
+    let best = null;
+    const tanH = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
     for (const d of this.drones) {
-      if (d.targeted || d.dead) continue;
-      if (d.status === 'locked') { this.launch(d); fired++; }
-      else if (d.status === 'iff') iff++;
-      else if (d.status === 'wrong') wrong++;
+      if (!this.alive(d)) continue;
+      const dist = d.obj.position.distanceTo(this.camera.position);
+      const ppu = innerHeight / (2 * dist * tanH); // pixels par unité à cette distance
+      const lab = this.toScreen(d.obj.position.clone().add(new THREE.Vector3(0, d.label.position.y, 0)));
+      const body = this.toScreen(d.obj.position);
+      if (!lab.front) continue;
+      const w = (d.label.scale.x * ppu) / 2 + slop;
+      const h = (d.label.scale.y * ppu) / 2 + slop;
+      const r = 3.4 * d.core.scale.x * ppu + slop;
+      const onLabel = Math.abs(x - lab.x) < w && Math.abs(y - lab.y) < h;
+      const onBody = Math.hypot(x - body.x, y - body.y) < r;
+      if ((onLabel || onBody) && (!best || d.p > best.p)) best = d;
     }
-    if (fired) sfx.lock();
-    if (wrong) {
-      this.stats.wrong += wrong;
-      this.score -= 20 * wrong;
-      this.log(`${wrong} capture(s) incorrecte(s) : tir refusé (−${20 * wrong})`, 'bad');
+    return best;
+  }
+
+  /** Choix au clavier : ←/→ parcourt les drones de gauche à droite. */
+  cycle(dir) {
+    const list = this.drones.filter((d) => this.alive(d));
+    if (!list.length) { this.sel = null; return; }
+    if (!this.alive(this.sel) || dir === 0) {
+      this.sel = list.reduce((a, b) => (b.p > a.p ? b : a)); // le plus proche
+    } else {
+      const xs = list.map((d) => ({ d, x: this.toScreen(d.obj.position).x })).sort((a, b) => a.x - b.x);
+      const i = xs.findIndex((o) => o.d === this.sel);
+      this.sel = xs[(i + dir + xs.length) % xs.length].d;
     }
-    if (iff) {
-      this.stats.iff += iff;
-      this.loseLife(`IFF : ${iff} balise(s) alliée(s) verrouillée(s) !`);
-      sfx.iff();
-    }
-    if (!fired && !wrong && !iff) { this.log('Aucune cible verrouillée', 'info'); sfx.error(); }
-    this.renderScore();
-    this.renderInfo();
+    sfx.key();
+  }
+
+  dryFire() {
+    sfx.error();
+  }
+
+  fire(d) {
+    if (this.state !== 'playing' || !this.alive(d)) return;
+    sfx.lock();
+    this.launch(d);
+    if (this.sel === d) this.sel = null;
   }
 
   loseLife(reason, { silent = false } = {}) {
     this.lives--;
     this.renderLives();
-    this.log(`−1 ♥ ${reason}`, 'bad');
     if (!silent) { flash('red'); this.shake = 1; }
+    if (reason && silent) this.log(`−1 ♥ ${esc(reason)}`, 'bad');
     if (this.lives <= 0) this.gameOver();
   }
 
   // ---------------------------------------------------------------
   //  DRONES & MISSILES
   // ---------------------------------------------------------------
-  spawnDrone(target) {
+  spawnDrone(item, travel) {
     const g = new THREE.Group();
     const core = new THREE.Mesh(
       new THREE.IcosahedronGeometry(2, 0),
@@ -692,12 +685,11 @@ export class JetGame {
     reticle.visible = false;
     g.add(core, wire, ring, label, reticle);
 
-    // Couloirs répartis à l'écran : la cible arrive le long d'un rayon caméra
-    const LANES = [[-0.45, 0.3], [-0.12, 0.36], [-0.32, 0.06], [0.02, 0.16], [-0.6, 0.12], [-0.2, 0.22], [0.06, 0.0]];
+    // la cible arrive le long d'un rayon caméra, dans un couloir de l'écran
     const [lx, ly] = LANES[this.lane++ % LANES.length];
     const cam = this.camera;
     const origin = cam.position.clone();
-    const dir = new THREE.Vector3(lx + (Math.random() - 0.5) * 0.08, ly + (Math.random() - 0.5) * 0.06, 0.5).unproject(cam).sub(origin).normalize();
+    const dir = new THREE.Vector3(lx + (Math.random() - 0.5) * 0.06, ly + (Math.random() - 0.5) * 0.05, 0.5).unproject(cam).sub(origin).normalize();
     const start = origin.clone().addScaledVector(dir, this.cfg.spawnDistance);
     const end = origin.clone().addScaledVector(dir, this.cfg.impactDistance);
     g.position.copy(start);
@@ -705,24 +697,36 @@ export class JetGame {
 
     const li = document.createElement('li');
     li.className = 'radar-item';
-    li.innerHTML = '<div class="rt"></div><div class="rv"></div><div class="bar"></div>';
+    const id = this.nextId++;
+    li.dataset.drone = id;
+    li.tabIndex = -1;
+    li.innerHTML = `<div class="rt">${highlightHTML(item.mot, [])}</div><div class="bar"></div>`;
     $('#radar').appendChild(li);
 
     const d = {
-      id: this.nextId++, target, obj: g, core, wire, ring, label, reticle, li, start, end,
-      p: 0, spin: (Math.random() - 0.5) * 2, targeted: false, dead: false, renderKey: '', labelAspect: 4,
+      id, item, obj: g, core, wire, ring, label, reticle, li, start, end, travel,
+      p: 0, spin: (Math.random() - 0.5) * 2, targeted: false, dead: false, look: '', labelAspect: 4,
     };
     this.drones.push(d);
-    this.evalDrone(d);
+    this.setLook(d, 'neutral');
+  }
 
-    // Regex déjà armée : verrouillage automatique des nouvelles cibles
-    if (this.committed) {
-      const r = evaluate(this.committed, target.text, this.level.mode);
-      if (classify(r.value, target.sol, this.level.mode) === 'locked') {
-        d.autoFire = 0.6; // délai de verrouillage (temps de jeu, donc figé en pause)
-      }
-    }
-    this.renderInfo();
+  /** Apparence d'un drone : neutre (ambre), visé (cyan), missile en route (rose). */
+  setLook(d, look) {
+    if (d.look === look) return;
+    d.look = look;
+    const { texture, aspect } = labelTexture(d.item.mot, [], look);
+    d.label.material.map?.dispose();
+    d.label.material.map = texture;
+    d.label.material.needsUpdate = true;
+    d.labelAspect = aspect;
+    const hex = STATE_HEX[look];
+    d.core.material.emissive.setHex(hex);
+    d.wire.material.color.setHex(hex);
+    d.reticle.visible = look !== 'neutral';
+    d.reticle.material.color.setHex(hex);
+    d.li.classList.toggle('aim', look === 'aim');
+    d.li.classList.toggle('targeted', look === 'locked');
   }
 
   removeDrone(d) {
@@ -736,14 +740,16 @@ export class JetGame {
       }
     });
     d.li.remove();
+    if (this.sel === d) this.sel = null;
+    if (this.hover === d) this.hover = null;
   }
 
   launch(d) {
     d.targeted = true;
-    d.li.classList.add('targeted');
+    this.setLook(d, 'locked');
     const obj = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.6, 6).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0x2bff88, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xff2bd6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
     glow.scale.setScalar(3);
     obj.add(body, glow);
     const side = this.missiles.length % 2 ? 1 : -1;
@@ -756,13 +762,13 @@ export class JetGame {
 
   updateMissiles(dt) {
     const tmp = new THREE.Vector3();
-    const trail = new THREE.Color(0x2bff88);
+    const trail = new THREE.Color(0xff2bd6);
     for (const m of this.missiles) {
       m.t += dt;
       const tgt = m.target.obj.position;
       tmp.subVectors(tgt, m.obj.position);
       const dist = tmp.length();
-      const speed = 240 + m.t * 260;
+      const speed = 260 + m.t * 300;
       tmp.normalize().multiplyScalar(speed);
       m.vel.lerp(tmp, Math.min(1, dt * (3 + m.t * 8)));
       m.obj.position.addScaledVector(m.vel, dt);
@@ -773,29 +779,65 @@ export class JetGame {
     this.missiles = this.missiles.filter((m) => {
       if (!m.hit) return true;
       this.scene.remove(m.obj);
-      const d = m.target;
-      if (!d.dead) this.kill(d);
+      if (!m.target.dead) this.resolveShot(m.target);
       return false;
     });
   }
 
-  kill(d) {
+  /** Le missile atteint le drone : cible -> détruite ; piège -> erreur, −1 vie. */
+  resolveShot(d) {
     const pos = d.obj.position.clone();
-    this.explode(pos, 0x2bff88);
-    sfx.boom();
-    const bonus = Math.round(100 * (1 - d.p));
-    this.score += 100 + bonus;
-    this.stats.kills++;
+    const { mot, hostile, raison } = d.item;
+    if (hostile) {
+      this.explode(pos, 0x2bff88);
+      sfx.boom();
+      const pts = 100 + Math.round(100 * (1 - d.p));
+      this.score += pts;
+      this.stats.hits++;
+      this.log(`✓ ${this.wordHTML(mot, true)} correspond · +${pts}`, 'good');
+    } else {
+      this.explode(pos, 0xff3860);
+      sfx.iff();
+      this.errors.push({ kind: 'shot', mot, raison });
+      this.log(`✗ ${this.wordHTML(mot)} ne correspond pas<small>${esc(raison)}</small>`, 'bad', 5200);
+      this.loseLife();
+    }
     this.renderScore();
-    this.log(`Cible détruite +${100 + bonus}`, 'good');
     this.removeDrone(d);
+    this.renderRadarHead();
+  }
+
+  /** Le drone arrive sur le jet sans avoir été visé. */
+  passDrone(d) {
+    const { mot, hostile, raison } = d.item;
+    if (hostile) {
+      sfx.impact();
+      this.explode(d.obj.position.clone(), 0xff3860);
+      this.errors.push({ kind: 'missed', mot });
+      this.log(`✗ ${this.wordHTML(mot, true)} correspondait : il fallait tirer`, 'bad', 5200);
+      this.removeDrone(d);
+      this.loseLife();
+    } else {
+      this.score += 25;
+      this.stats.spared++;
+      sfx.pass();
+      this.log(`✓ ${this.wordHTML(mot)} épargné · +25<small>${esc(raison)}</small>`, 'good', 3800);
+      this.removeDrone(d);
+    }
+    this.renderScore();
+    this.renderRadarHead();
   }
 
   updateDrones(dt) {
-    const v = 1 / this.level.speed;
+    // visée : souris (survol) ou clavier (sélection)
+    if (this.kbd && !this.alive(this.sel)) this.cycle(0);
+    this.hover = this.pointer && !this.kbd ? this.pick(this.pointer.x, this.pointer.y) : null;
+    const aimed = this.kbd ? this.sel : this.radarHover && this.alive(this.radarHover) ? this.radarHover : this.hover;
+    this.app.renderer.domElement.style.cursor = this.hover ? 'pointer' : 'crosshair';
+
     for (const d of this.drones) {
       if (d.dead) continue;
-      d.p += dt * v;
+      d.p += dt / d.travel;
       const e = d.p;
       d.obj.position.lerpVectors(d.start, d.end, e);
       d.obj.position.x += Math.sin(this.t * 0.9 + d.id) * 4 * (1 - e);
@@ -805,6 +847,7 @@ export class JetGame {
       d.wire.rotation.y -= dt * 0.5;
       d.ring.rotation.z += dt * 1.5;
       d.reticle.material.rotation -= dt * 2;
+      if (!d.targeted) this.setLook(d, d === aimed ? 'aim' : 'neutral');
       // taille à l'écran à peu près constante (lisible de loin), bornée en largeur
       const dist = d.obj.position.distanceTo(this.camera.position);
       const visW = 2 * dist * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect;
@@ -817,32 +860,21 @@ export class JetGame {
       d.label.scale.set(h * d.labelAspect, h, 1);
       d.label.position.y = 3.6 * bodyScale + h * 0.6;
       d.li.querySelector('.bar').style.width = `${(1 - e) * 100}%`;
-      if (d.status === 'iff') d.core.material.emissiveIntensity = 0.4 + Math.abs(Math.sin(this.t * 10)) * 0.8;
-      if (d.autoFire !== undefined && !d.targeted) {
-        d.autoFire -= dt;
-        if (d.autoFire <= 0) { sfx.lock(); this.launch(d); }
-      }
+      d.li.classList.toggle('urgent', e > 0.75);
       if (e >= 1 && !d.targeted) this.passDrone(d);
+      if (this.state !== 'playing') break;
     }
     this.drones = this.drones.filter((d) => !d.dead);
   }
 
-  passDrone(d) {
-    const lv = this.level;
-    if (d.target.hostile) {
-      this.stats.impacts++;
-      sfx.impact();
-      this.explode(d.obj.position.clone(), 0xff3860);
-      this.removeDrone(d);
-      this.log(`Impact ! Attendu : ${formatValue(d.target.sol, lv.mode)}`, 'bad');
-      this.loseLife('Drone hostile non intercepté');
-    } else {
-      this.score += 25;
-      this.renderScore();
-      sfx.pass();
-      this.log('Balise alliée épargnée +25', 'good');
-      this.removeDrone(d);
-    }
+  spawnNext() {
+    const q = 1 - this.queue.length / this.waveSize;
+    const p = pace(this.level, q);
+    this.spawnDrone(this.queue.shift(), p.travel);
+    // en fin de niveau, les drones arrivent parfois par deux
+    if (this.queue.length && Math.random() < p.double) this.spawnDrone(this.queue.shift(), p.travel * 1.05);
+    this.spawnTimer = p.spawnEvery;
+    this.renderRadarHead();
   }
 
   // ---------------------------------------------------------------
@@ -853,37 +885,45 @@ export class JetGame {
     this.completeLevel();
   }
 
+  errorsHTML() {
+    if (!this.errors.length) return '<div class="grace-note">Sans faute : aucun piège touché, aucune cible manquée.</div>';
+    return `<p>Tes erreurs :</p><ul class="errors">${this.errors.map((e) => (e.kind === 'shot'
+      ? `<li><span class="tag bad">PIÈGE TOUCHÉ</span>${this.wordHTML(e.mot)}<span class="why">${esc(e.raison)}</span></li>`
+      : `<li><span class="tag warn">CIBLE MANQUÉE</span>${this.wordHTML(e.mot, true)}<span class="why">Ce mot correspondait à la regex.</span></li>`)).join('')}</ul>`;
+  }
+
   completeLevel() {
     this.state = 'done';
     sfx.levelUp();
     flash('green');
     const p = this.app.progress;
+    const lv = this.level;
     const lvScore = this.score - this.levelScore0;
-    p.best[this.level.id] = Math.max(p.best[this.level.id] ?? 0, lvScore);
-    p.done[this.level.id] = true;
+    p.best[lv.id] = Math.max(p.best[lv.id] ?? 0, lvScore);
+    p.done[lv.id] = true;
     const last = this.levelIdx >= this.squad.levels.length - 1;
-    const game = this.app.data.games.find((g) => g.id === 'jet');
-    const sIdx = game.squadrons.indexOf(this.squad);
+    const squads = this.app.data.games.find((g) => g.id === 'jet').squadrons;
+    const sIdx = squads.indexOf(this.squad);
     if (last) p.unlocked.jet = Math.max(p.unlocked.jet ?? 1, sIdx + 2);
     this.app.save();
+    // niveau sans faute : une vie regagnée
+    const perfect = !this.errors.length;
+    const bonusLife = perfect && this.lives < this.cfg.livesPerSquadron;
+    if (bonusLife) { this.lives++; this.renderLives(); }
     const st = this.stats;
-    const lv = this.level;
-    const mine = this.committed ? `/${patternHTML(this.committed.src)}/${esc(lv.flags)}` : '—';
     openModal(`
-      <div class="kicker">${last ? 'ESCADRILLE TERMINÉE' : 'MISSION ACCOMPLIE'}</div>
-      <h2>${esc(lv.title)} ✓</h2>
+      <div class="kicker">${last ? 'ESCADRILLE TERMINÉE' : 'MISSION ACCOMPLIE'} · ${esc(lv.notion)}</div>
+      <h2>${regexHTML(lv.regex, lv.flags)} ✓</h2>
       <div class="stats">
-        <div class="stat"><b>${st.kills}/${st.hostiles}</b><span>Cibles détruites</span></div>
-        <div class="stat"><b>${st.impacts}</b><span>Impacts</span></div>
-        <div class="stat"><b>${st.iff}</b><span>Erreurs IFF</span></div>
-        <div class="stat"><b>${lvScore}</b><span>Points niveau</span></div>
+        <div class="stat"><b>${st.hits}/${st.targets}</b><span>Cibles détruites</span></div>
+        <div class="stat"><b>${st.spared}/${st.traps}</b><span>Pièges épargnés</span></div>
+        <div class="stat"><b>${this.errors.length}</b><span>Erreurs</span></div>
+        <div class="stat"><b>${lvScore}</b><span>Points</span></div>
       </div>
-      <p>Ta dernière regex armée :</p>
-      <div class="solution">${mine}</div>
-      <p>Solution de référence :</p>
-      <div class="solution">/${patternHTML(lv.solution)}/${esc(lv.flags)}</div>
-      ${last && sIdx + 1 < game.squadrons.length ? `<div class="grace-note">Nouvelle escadrille débloquée : <b>${esc(game.squadrons[sIdx + 1].name)}</b></div>` : ''}
-      ${last && sIdx + 1 >= game.squadrons.length ? '<div class="grace-note">Toutes les escadrilles sont terminées. Bravo, pilote !</div>' : ''}
+      ${this.errorsHTML()}
+      ${bonusLife ? '<div class="grace-note">Niveau sans faute : <b>+1 ♥</b></div>' : ''}
+      ${last && sIdx + 1 < squads.length ? `<div class="grace-note">Nouvelle escadrille débloquée : <b>${esc(squads[sIdx + 1].name)}</b></div>` : ''}
+      ${last && sIdx + 1 >= squads.length ? '<div class="grace-note">Toutes les escadrilles sont terminées. Bravo, pilote !</div>' : ''}
       <div class="modal-actions">
         <button class="btn ghost" data-act="menu">Escadrilles</button>
         ${last ? '' : '<button class="btn pink" data-act="next" data-autofocus>Niveau suivant ▶</button>'}
@@ -901,10 +941,11 @@ export class JetGame {
     this.state = 'over';
     sfx.gameOver();
     openModal(`
-      <div class="kicker">MISSION ÉCHOUÉE</div>
+      <div class="kicker">MISSION ÉCHOUÉE · ${esc(this.level.notion)}</div>
       <h2>Plus de vies</h2>
-      <p>Ton appareil est hors de combat. Il faut recommencer la séquence de <b>${esc(this.squad.name)}</b> depuis le premier niveau.</p>
-      <p>Notion du niveau : <code>${esc(this.level.notion)}</code> — solution possible : <span class="solution" style="display:inline-block">/${patternHTML(this.level.solution)}/${esc(this.level.flags)}</span></p>
+      <p>Ton appareil est hors de combat. Il faut recommencer <b>${esc(this.squad.name)}</b> depuis le premier niveau.</p>
+      <p>Regex du niveau : <span class="solution" style="display:inline-block">${regexHTML(this.level.regex, this.level.flags)}</span></p>
+      ${this.errorsHTML()}
       <div class="modal-actions">
         <button class="btn ghost" data-act="menu">Escadrilles</button>
         <button class="btn pink" data-act="restart" data-autofocus>Recommencer l'escadrille</button>
@@ -920,8 +961,22 @@ export class JetGame {
     this.camera.updateProjectionMatrix();
   }
 
-  enter() {}
-  exit() { this.state = 'idle'; this.clearField(); }
+  enter() {
+    const c = this.app.renderer.domElement;
+    c.addEventListener('pointermove', this.onPointerMove);
+    c.addEventListener('pointerleave', this.onPointerLeave);
+    c.addEventListener('pointerdown', this.onPointerDown);
+  }
+
+  exit() {
+    this.state = 'idle';
+    this.clearField();
+    const c = this.app.renderer.domElement;
+    c.removeEventListener('pointermove', this.onPointerMove);
+    c.removeEventListener('pointerleave', this.onPointerLeave);
+    c.removeEventListener('pointerdown', this.onPointerDown);
+    c.style.cursor = '';
+  }
 
   update(dt) {
     this.t += dt;
@@ -946,12 +1001,9 @@ export class JetGame {
       this.levelTime += dt;
       this.renderClock();
       this.spawnTimer -= dt;
-      if (this.spawnTimer <= 0 && this.queue.length) {
-        this.spawnDrone(this.queue.shift());
-        this.spawnTimer = this.level.spawnEvery;
-      }
+      if (this.spawnTimer <= 0 && this.queue.length) this.spawnNext();
       this.updateDrones(dt);
-      this.updateMissiles(dt);
+      if (this.state === 'playing') this.updateMissiles(dt);
       if (this.state === 'playing') this.checkEnd();
     }
     this.updateParticles(flow);

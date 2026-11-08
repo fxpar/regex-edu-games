@@ -1,5 +1,5 @@
 // Progression locale (localStorage) — toujours protégée par try/catch.
-const KEY = 'regexArcade.v1';
+const KEY = 'regexArcade.v2'; // v2 : missions « viser / épargner »
 // ?unlock=all : tout débloquer le temps de la session (pratique pour l'enseignant), sans l'enregistrer
 export const UNLOCK_ALL = new URLSearchParams(location.search).get('unlock') === 'all';
 

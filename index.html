@@ -42,8 +42,9 @@
         <button class="btn ghost small" id="btn-squad-back" type="button">← Hub</button>
         <h2 class="neon-sub">MACH-REGEX <small>Jet Interceptor</small></h2>
       </header>
-      <p class="squad-brief">Ta regex est l'algorithme de verrouillage radar. Tape-la, appuie sur <kbd>Entrée</kbd> : les missiles partent sur chaque cible
-        capturée <b>exactement</b>. Évite les balises alliées (faux positifs) et ne laisse passer aucun drone hostile.</p>
+      <p class="squad-brief">Le cockpit affiche une regex. Des drones arrivent, chacun porte un mot :
+        <b>tire</b> sur ceux qui correspondent à la regex, <b>épargne</b> les autres. Clique ou touche un drone pour tirer
+        (au clavier : <kbd>←</kbd> <kbd>→</kbd> puis <kbd>Espace</kbd>). Un piège touché ou une cible manquée coûte 1 ♥.</p>
       <div id="squad-list" class="squad-list"></div>
     </div>
   </section>
@@ -67,12 +68,8 @@
     </header>
 
     <aside class="hud-objective">
-      <div class="obj-head">
-        <span class="obj-notion" id="obj-notion"></span>
-        <span class="obj-title" id="obj-title"></span>
-      </div>
+      <div class="obj-head"><span class="obj-notion" id="obj-notion"></span></div>
       <p id="obj-text" class="obj-text"></p>
-      <div class="obj-badges"><span id="obj-mode" class="badge"></span><span id="obj-flags" class="badge warn" hidden></span></div>
     </aside>
 
     <aside class="hud-radar" aria-label="Radar">
@@ -80,24 +77,15 @@
       <ul id="radar" class="radar-list"></ul>
     </aside>
 
-    <div class="crosshair" aria-hidden="true"></div>
     <div id="log" class="log" aria-live="polite"></div>
 
     <footer class="hud-bottom">
-      <div id="keypad" class="keypad" aria-label="Symboles"></div>
-      <div class="rx-bar">
-        <span class="rx-label">LOCK-ON</span>
-        <div class="rx-field">
-          <span class="rx-slash">/</span>
-          <div class="rx-wrap">
-            <pre id="rx-hl" class="rx-hl" aria-hidden="true"></pre>
-            <input id="rx" class="rx-input" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="send" aria-label="Expression régulière" placeholder="tape ta regex…">
-          </div>
-          <span class="rx-slash">/<span id="rx-flags"></span></span>
-        </div>
-        <button class="btn fire" id="btn-fire" type="button">FEU ⏎</button>
+      <div class="cockpit">
+        <span class="ck-label">CIBLES</span>
+        <div id="ck-regex" class="ck-regex"></div>
+        <div class="ck-badges"><span id="ck-mode" class="badge"></span><span id="ck-flags" class="badge warn" hidden></span></div>
       </div>
-      <div id="rx-info" class="rx-info"></div>
+      <div class="ck-help"><span class="desk">Clique sur un drone pour tirer · <kbd>←</kbd> <kbd>→</kbd> choisir · <kbd>Espace</kbd> tirer · <kbd>Échap</kbd> pause</span><span class="touch">Touche un drone (ou sa ligne du radar) pour tirer</span></div>
     </footer>
   </section>
 

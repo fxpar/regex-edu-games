@@ -11,6 +11,8 @@ L'accueil propose deux univers, pour des publics différents, avec **les mêmes 
 - **La salle d'arcade** : salle néon en 3D (Three.js) dont chaque borne est un mini-jeu ; Mach-Regex est un jeu de tir rapide en jet.
 - **Le jardin des bulles** : version douce, claire et lente. Des mots flottent dans des bulles : on cueille ceux qui correspondent.
 
+![Accueil : choix entre la salle d'arcade et le jardin des bulles](docs/screenshots/accueil-choix-univers.png)
+
 100 % côté client : HTML, CSS et JavaScript (modules ES), sans étape de build ni serveur applicatif.
 Déployable tel quel sur GitHub Pages.
 
@@ -54,6 +56,8 @@ Three.js est chargé depuis jsDelivr via un `importmap`, il n'y a rien à instal
 
 ## Le jardin des bulles
 
+<img src="docs/screenshots/jardin-mobile.png" alt="Le jardin des bulles sur téléphone : la regex /chat/ sur le panneau, des bulles de mots, le bocal" width="260" align="right">
+
 - Les 6 escadrilles deviennent des **parcelles**, chaque niveau une **fleur** à faire éclore.
 - La regex est affichée sur un panneau ; des bulles montent lentement (16 s au début, 12 s à la fin), 2 à 4 à la fois.
 - **Cueillir** une bulle (clic, doigt, ou `Tab` + `Entrée`) : si le mot correspond, il rejoint le bocal ; sinon, −1 feuille 🍃 et la raison s'affiche.
@@ -61,9 +65,13 @@ Three.js est chargé depuis jsDelivr via un `importmap`, il n'y a rien à instal
 - La fleur éclot si au moins **70 %** des bons mots sont cueillis ; sinon on la réessaie, sans perdre ses feuilles.
 - Comme dans l'arcade : 5 feuilles par parcelle, cours libre 30 s puis payant (1 feuille), bilan des erreurs, +1 feuille pour une fleur sans faute.
 - Pas de musique, sons doux, thème clair (police Nunito, couleurs pastel).
+- Pensé aussi pour le téléphone : on cueille du doigt.
+
+<br clear="all">
 
 ## La salle d'arcade
 
+![Mach-Regex en vol : la regex /chat/ dans le cockpit, des drones portant des mots, le radar à droite](docs/screenshots/arcade-jet-en-vol.png)
 
 | Borne | État | Principe |
 |---|---|---|
@@ -84,6 +92,8 @@ Three.js est chargé depuis jsDelivr via un `importmap`, il n'y a rien à instal
 - **Cours** : la fiche (2 lignes, la regex, un exemple qui correspond, un piège) s'affiche au début de chaque niveau. Elle est libre pendant 30 s, puis chaque consultation coûte 1 vie (bloquée à la dernière vie).
 - **Vies** : 5 par escadrille ; un niveau sans faute en rend une. À 0, l'escadrille recommence depuis son premier niveau.
 - **Bilan** : à la fin de chaque niveau, la liste des erreurs avec leur explication.
+
+![Choix de l'escadrille : six escadrilles, des lettres jusqu'au regard arrière](docs/screenshots/arcade-jet-escadrilles.png)
 
 ### Commandes
 
@@ -112,6 +122,7 @@ js/textures.js        textures dessinées sur canvas (étiquettes, réticule, é
 js/audio.js           effets sonores et musique synthétisés (WebAudio)
 js/storage.js         progression dans localStorage
 tests/validate-missions.mjs   vérification automatique des niveaux
+docs/screenshots/     captures d'écran du README (univers-écran.png)
 ```
 
 ## Ajouter un jeu
